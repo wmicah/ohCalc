@@ -1,0 +1,70 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model SiteSettings {
+  id        Int     @id @default(1)
+  name      String  @default("BLUE WAVE LAUNDRY")
+  tagline   String?
+  hours     String  @default("Open daily, 6am–10pm")
+  address   String  @default("545 SE Baseline St, Hillsboro, OR")
+  zip       String? // TBD
+  email     String  @default("info@bluewavelaundry.net")
+  phone     String? // TBD
+  ebt       Boolean @default(false) // client may confirm later
+  updatedAt DateTime @updatedAt
+
+  @@map("site_settings")
+}
+
+model Service {
+  id    Int    @id @default(autoincrement())
+  title String
+  blurb String
+  order Int    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("services")
+}
+
+model Amenity {
+  id    Int    @id @default(autoincrement())
+  label String
+  order Int    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("amenities")
+}
+
+model OzonePoint {
+  id    Int    @id @default(autoincrement())
+  text  String
+  order Int    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("ozone_points")
+}
+
+model Media {
+  id   Int    @id @default(autoincrement())
+  url  String
+  alt  String?
+  kind String? // e.g., "interior", "machines", "exterior"
+  order Int    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("media")
+}
+
