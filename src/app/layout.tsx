@@ -9,9 +9,9 @@ import JsonLd from "@/components/JsonLd"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Blue Wave Laundry - Fast, Clean, High-Capacity Laundry",
+  title: "Once Human Damage Calculator - Optimize Your Combat",
   description:
-    "Brand new Speed Queen laundromat with high-capacity washers up to 100 lb, contactless payment, and ozone sanitation. Open daily 6am-10pm in Hillsboro, OR.",
+    "Advanced damage calculator for Once Human. Calculate weapon damage, armor penetration, and DPS optimization for maximum survival efficiency.",
 }
 
 export default function RootLayout({

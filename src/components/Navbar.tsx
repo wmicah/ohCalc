@@ -1,107 +1,120 @@
-import MaxWidthWrapper from "./MaxWidthWrapper"
-import Link from "next/link"
-import { buttonVariants } from "./ui/button"
-import { getSiteSettings } from "@/lib/data"
-import {
-  LoginLink,
-  LogoutLink,
-  RegisterLink,
-} from "@kinde-oss/kinde-auth-nextjs/components"
-import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server"
-import Logo from "./Logo"
+"use client"
 
-const Navbar = async () => {
-  const settings = await getSiteSettings()
-  const { isAuthenticated, getUser } = await getKindeServerSession()
-  const user = await getUser()
+import { useState } from "react"
+import Link from "next/link"
+import { Calculator, Menu, X, Database, Settings } from "lucide-react"
+import { Button } from "@/components/ui/button"
+
+export default function Navbar() {
+  const [isOpen, setIsOpen] = useState(false)
 
   return (
-    <nav className='sticky h-16 inset-x-0 top-0 z-30 w-full bg-royal-blue transition-all shadow-lg'>
-      <MaxWidthWrapper>
-        <div className='flex h-16 items-center justify-between'>
+    <nav className='fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-md border-b border-orange-500/20'>
+      <div className='max-w-7xl mx-auto px-6'>
+        <div className='flex items-center justify-between h-16'>
+          {/* Logo */}
           <Link
             href='/'
-            className='flex z-40 items-center'
+            className='flex items-center gap-3'
           >
-            <Logo
-              size='sm'
-              variant='white'
-            />
+            <div className='w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center'>
+              <Calculator className='h-6 w-6 text-black' />
+            </div>
+            <span className='text-xl font-bold text-white'>
+              <span className='text-orange-400'>ONCE HUMAN</span> CALC
+            </span>
           </Link>
 
-          <div className='hidden md:flex items-center space-x-8'>
+          {/* Desktop Navigation */}
+          <div className='hidden md:flex items-center gap-8'>
             <Link
               href='/'
-              className='text-white hover:text-teal-300 transition-colors'
+              className='text-gray-300 hover:text-orange-400 transition-colors'
             >
               Home
             </Link>
             <Link
-              href='/services'
-              className='text-white hover:text-teal-300 transition-colors'
+              href='/calculator'
+              className='text-gray-300 hover:text-orange-400 transition-colors'
             >
-              Services
+              Calculator
             </Link>
             <Link
-              href='/about'
-              className='text-white hover:text-teal-300 transition-colors'
+              href='/weapons'
+              className='text-gray-300 hover:text-orange-400 transition-colors'
             >
-              About
+              Weapons
             </Link>
             <Link
-              href='/faq'
-              className='text-white hover:text-teal-300 transition-colors'
+              href='/armor'
+              className='text-gray-300 hover:text-orange-400 transition-colors'
             >
-              FAQ
+              Armor
             </Link>
-            <Link
-              href='/contact'
-              className='text-white hover:text-teal-300 transition-colors'
+            <Button
+              asChild
+              className='bg-orange-500 hover:bg-orange-400 text-black font-bold'
             >
-              Contact
-            </Link>
-            {isAuthenticated ? (
-              <>
-                <Link
-                  href='/admin'
-                  className={
-                    buttonVariants({
-                      variant: "secondary",
-                      size: "sm",
-                    }) + " bg-white text-royal-blue hover:bg-white/90"
-                  }
-                >
-                  Admin
-                </Link>
-                <LogoutLink
-                  className={
-                    buttonVariants({
-                      variant: "outline",
-                      size: "sm",
-                    }) +
-                    " border-white text-white hover:bg-white hover:text-royal-blue"
-                  }
-                >
-                  Logout
-                </LogoutLink>
-              </>
-            ) : (
-              <LoginLink
-                className={
-                  buttonVariants({
-                    variant: "secondary",
-                    size: "sm",
-                  }) + " bg-white text-royal-blue hover:bg-white/90"
-                }
-              >
-                Login
-              </LoginLink>
-            )}
+              <Link href='/calculator'>Start Calculating</Link>
+            </Button>
           </div>
+
+          {/* Mobile menu button */}
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className='md:hidden text-white hover:text-orange-400 transition-colors'
+          >
+            {isOpen ? <X className='h-6 w-6' /> : <Menu className='h-6 w-6' />}
+          </button>
         </div>
-      </MaxWidthWrapper>
+
+        {/* Mobile Navigation */}
+        {isOpen && (
+          <div className='md:hidden bg-gray-900/95 backdrop-blur-md border-t border-orange-500/20'>
+            <div className='px-6 py-4 space-y-4'>
+              <Link
+                href='/'
+                className='block text-gray-300 hover:text-orange-400 transition-colors'
+                onClick={() => setIsOpen(false)}
+              >
+                Home
+              </Link>
+              <Link
+                href='/calculator'
+                className='block text-gray-300 hover:text-orange-400 transition-colors'
+                onClick={() => setIsOpen(false)}
+              >
+                Calculator
+              </Link>
+              <Link
+                href='/weapons'
+                className='block text-gray-300 hover:text-orange-400 transition-colors'
+                onClick={() => setIsOpen(false)}
+              >
+                Weapons
+              </Link>
+              <Link
+                href='/armor'
+                className='block text-gray-300 hover:text-orange-400 transition-colors'
+                onClick={() => setIsOpen(false)}
+              >
+                Armor
+              </Link>
+              <Button
+                asChild
+                className='w-full bg-orange-500 hover:bg-orange-400 text-black font-bold'
+              >
+                <Link
+                  href='/calculator'
+                  onClick={() => setIsOpen(false)}
+                >
+                  Start Calculating
+                </Link>
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
     </nav>
   )
 }
-
-export default Navbar
