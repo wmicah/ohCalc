@@ -1,17 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import {
-	Calculator,
-	Target,
-	Zap,
-	Shield,
-	Sword,
-	Flame,
-	Swords,
-} from "lucide-react"
+import { Calculator } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { DamageCalculator, DPSCalculator } from "@/lib/damage-formulas"
+import { DamageCalculator } from "@/lib/damage-formulas"
 
 export default function CalculatorPage() {
 	// Weapon type selection
@@ -31,7 +23,15 @@ export default function CalculatorPage() {
 	// Common stats
 	const [enemyBonus, setEnemyBonus] = useState("")
 
-	const [results, setResults] = useState<any>(null)
+	const [results, setResults] = useState<{
+		weaponType: "normal" | "elemental"
+		damageResults: {
+			base: { damage: number; steps: string[] }
+			crit?: { damage: number; steps: string[] }
+			weakspot?: { damage: number; steps: string[] }
+			critWeakspot?: { damage: number; steps: string[] }
+		}
+	} | null>(null)
 	const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
 
 	useEffect(() => {
@@ -44,7 +44,12 @@ export default function CalculatorPage() {
 	}, [])
 
 	const calculateDamage = () => {
-		let damageResults: any = {}
+		let damageResults: {
+			base: { damage: number; steps: string[] }
+			crit?: { damage: number; steps: string[] }
+			weakspot?: { damage: number; steps: string[] }
+			critWeakspot?: { damage: number; steps: string[] }
+		} = { base: { damage: 0, steps: [] } }
 
 		if (weaponType === "normal") {
 			const attackVal = parseFloat(attack) || 0
@@ -354,7 +359,7 @@ export default function CalculatorPage() {
 												Crit
 											</div>
 											<div className="text-3xl font-bold text-white">
-												{results.damageResults.crit.damage}
+												{results.damageResults.crit?.damage}
 											</div>
 										</div>
 
@@ -363,7 +368,7 @@ export default function CalculatorPage() {
 												Weakspot Hit
 											</div>
 											<div className="text-3xl font-bold text-white">
-												{results.damageResults.weakspot.damage}
+												{results.damageResults.weakspot?.damage}
 											</div>
 										</div>
 
@@ -372,7 +377,7 @@ export default function CalculatorPage() {
 												Crit Weakspot
 											</div>
 											<div className="text-3xl font-bold text-white">
-												{results.damageResults.critWeakspot.damage}
+												{results.damageResults.critWeakspot?.damage}
 											</div>
 										</div>
 									</>
