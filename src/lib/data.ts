@@ -1,153 +1,155 @@
-import { prisma } from "./prisma"
-
-// Helper function to create fetch with cache tags
-async function fetchWithCache<T>(
-  key: string,
-  fetcher: () => Promise<T>,
-  tags: string[]
-): Promise<T> {
-  // In a real implementation, you would use Next.js fetch with cache tags
-  // For now, we'll just call the fetcher directly
-  return await fetcher()
-}
+// Mock data for Once Human damage calculator
+// These functions return static data instead of using a database
 
 // Site Settings
 export async function getSiteSettings() {
-  return fetchWithCache(
-    "site-settings",
-    async () => {
-      try {
-        let settings = await prisma.siteSettings.findFirst()
-
-        if (!settings) {
-          // Create default settings if none exist
-          settings = await prisma.siteSettings.create({
-            data: {
-              name: "BLUE WAVE LAUNDRY",
-              tagline: "Fast, clean, and built for big loads.",
-              hours: "Open daily, 6am–10pm",
-              address: "545 SE Baseline St, Hillsboro, OR",
-              email: "info@bluewavelaundry.net",
-              ebt: false,
-            },
-          })
-        }
-
-        return settings
-      } catch (error) {
-        console.error("Error fetching site settings:", error)
-        return null
-      }
-    },
-    ["site"]
-  )
+  return {
+    id: 1,
+    name: "ONCE HUMAN DAMAGE CALC",
+    tagline: "A simple damage calculator for Once Human weapons and gear",
+    hours: "Always available",
+    address: "Online Calculator",
+    email: "contact@example.com",
+    ebt: false,
+    updatedAt: new Date(),
+  }
 }
 
-// Services
+// Services (weapon categories)
 export async function getServices() {
-  return fetchWithCache(
-    "services",
-    async () => {
-      try {
-        return await prisma.service.findMany({
-          orderBy: { order: "asc" },
-        })
-      } catch (error) {
-        console.error("Error fetching services:", error)
-        return []
-      }
+  return [
+    {
+      id: 1,
+      title: "Assault Rifles",
+      blurb: "High damage, medium range weapons",
+      order: 1,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     },
-    ["services"]
-  )
+    {
+      id: 2,
+      title: "Sniper Rifles",
+      blurb: "Long range, high precision weapons",
+      order: 2,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    {
+      id: 3,
+      title: "Shotguns",
+      blurb: "Close range, high damage weapons",
+      order: 3,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  ]
 }
 
-// Amenities
+// Amenities (weapon features)
 export async function getAmenities() {
-  return fetchWithCache(
-    "amenities",
-    async () => {
-      try {
-        return await prisma.amenity.findMany({
-          orderBy: { order: "asc" },
-        })
-      } catch (error) {
-        console.error("Error fetching amenities:", error)
-        return []
-      }
+  return [
+    {
+      id: 1,
+      label: "High Damage",
+      order: 1,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     },
-    ["amenities"]
-  )
+    {
+      id: 2,
+      label: "Fast Reload",
+      order: 2,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    {
+      id: 3,
+      label: "Low Recoil",
+      order: 3,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  ]
 }
 
-// Ozone Points
+// Ozone Points (damage calculation tips)
 export async function getOzonePoints() {
-  return fetchWithCache(
-    "ozone-points",
-    async () => {
-      try {
-        return await prisma.ozonePoint.findMany({
-          orderBy: { order: "asc" },
-        })
-      } catch (error) {
-        console.error("Error fetching ozone points:", error)
-        return []
-      }
+  return [
+    {
+      id: 1,
+      text: "Damage is calculated based on weapon stats and target armor",
+      order: 1,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     },
-    ["ozone"]
-  )
+    {
+      id: 2,
+      text: "Critical hits deal 2x damage",
+      order: 2,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    {
+      id: 3,
+      text: "Armor reduces incoming damage by a percentage",
+      order: 3,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  ]
 }
 
-// Media
+// Media (weapon images)
 export async function getMedia() {
-  return fetchWithCache(
-    "media",
-    async () => {
-      try {
-        return await prisma.media.findMany({
-          orderBy: { order: "asc" },
-        })
-      } catch (error) {
-        console.error("Error fetching media:", error)
-        return []
-      }
+  return [
+    {
+      id: 1,
+      url: "/images/weapon1.jpg",
+      alt: "Assault Rifle",
+      kind: "weapon",
+      order: 1,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     },
-    ["media"]
-  )
+    {
+      id: 2,
+      url: "/images/weapon2.jpg",
+      alt: "Sniper Rifle",
+      kind: "weapon",
+      order: 2,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  ]
 }
 
 // Get all data for homepage
 export async function getHomepageData() {
-  return fetchWithCache(
-    "homepage-data",
-    async () => {
-      try {
-        const [settings, services, amenities, ozonePoints, media] =
-          await Promise.all([
-            getSiteSettings(),
-            getServices(),
-            getAmenities(),
-            getOzonePoints(),
-            getMedia(),
-          ])
+  try {
+    const [settings, services, amenities, ozonePoints, media] =
+      await Promise.all([
+        getSiteSettings(),
+        getServices(),
+        getAmenities(),
+        getOzonePoints(),
+        getMedia(),
+      ])
 
-        return {
-          settings,
-          services,
-          amenities,
-          ozonePoints,
-          media,
-        }
-      } catch (error) {
-        console.error("Error fetching homepage data:", error)
-        return {
-          settings: null,
-          services: [],
-          amenities: [],
-          ozonePoints: [],
-          media: [],
-        }
-      }
-    },
-    ["site", "services", "amenities", "ozone", "media"]
-  )
+    return {
+      settings,
+      services,
+      amenities,
+      ozonePoints,
+      media,
+    }
+  } catch (error) {
+    console.error("Error fetching homepage data:", error)
+    return {
+      settings: null,
+      services: [],
+      amenities: [],
+      ozonePoints: [],
+      media: [],
+    }
+  }
 }

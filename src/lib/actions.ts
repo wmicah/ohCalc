@@ -1,6 +1,5 @@
 "use server"
 
-import { prisma } from "./prisma"
 import { revalidateTag } from "next/cache"
 import { redirect } from "next/navigation"
 import { z } from "zod"
@@ -64,11 +63,8 @@ export async function updateSiteSettings(formData: FormData) {
 
     const validated = siteSettingsSchema.parse(data)
 
-    await prisma.siteSettings.upsert({
-      where: { id: 1 },
-      update: validated,
-      create: { id: 1, ...validated },
-    })
+    // Mock implementation - in a real app, you'd save to database
+    console.log("Site settings updated:", validated)
 
     revalidateTag("site")
     return { success: true }
@@ -89,9 +85,8 @@ export async function createService(formData: FormData) {
 
     const validated = serviceSchema.parse(data)
 
-    await prisma.service.create({
-      data: validated,
-    })
+    // Mock implementation - in a real app, you'd save to database
+    console.log("Service created:", validated)
 
     revalidateTag("services")
     return { success: true }
@@ -111,10 +106,8 @@ export async function updateService(id: number, formData: FormData) {
 
     const validated = serviceSchema.parse(data)
 
-    await prisma.service.update({
-      where: { id },
-      data: validated,
-    })
+    // Mock implementation - in a real app, you'd update database
+    console.log("Service updated:", { id, ...validated })
 
     revalidateTag("services")
     return { success: true }
@@ -126,9 +119,8 @@ export async function updateService(id: number, formData: FormData) {
 
 export async function deleteService(id: number) {
   try {
-    await prisma.service.delete({
-      where: { id },
-    })
+    // Mock implementation - in a real app, you'd delete from database
+    console.log("Service deleted:", id)
 
     revalidateTag("services")
     return { success: true }
@@ -148,9 +140,8 @@ export async function createAmenity(formData: FormData) {
 
     const validated = amenitySchema.parse(data)
 
-    await prisma.amenity.create({
-      data: validated,
-    })
+    // Mock implementation - in a real app, you'd save to database
+    console.log("Amenity created:", validated)
 
     revalidateTag("amenities")
     return { success: true }
@@ -169,10 +160,8 @@ export async function updateAmenity(id: number, formData: FormData) {
 
     const validated = amenitySchema.parse(data)
 
-    await prisma.amenity.update({
-      where: { id },
-      data: validated,
-    })
+    // Mock implementation - in a real app, you'd update database
+    console.log("Amenity updated:", { id, ...validated })
 
     revalidateTag("amenities")
     return { success: true }
@@ -184,9 +173,8 @@ export async function updateAmenity(id: number, formData: FormData) {
 
 export async function deleteAmenity(id: number) {
   try {
-    await prisma.amenity.delete({
-      where: { id },
-    })
+    // Mock implementation - in a real app, you'd delete from database
+    console.log("Amenity deleted:", id)
 
     revalidateTag("amenities")
     return { success: true }
@@ -206,9 +194,8 @@ export async function createOzonePoint(formData: FormData) {
 
     const validated = ozonePointSchema.parse(data)
 
-    await prisma.ozonePoint.create({
-      data: validated,
-    })
+    // Mock implementation - in a real app, you'd save to database
+    console.log("Ozone point created:", validated)
 
     revalidateTag("ozone")
     return { success: true }
@@ -227,10 +214,8 @@ export async function updateOzonePoint(id: number, formData: FormData) {
 
     const validated = ozonePointSchema.parse(data)
 
-    await prisma.ozonePoint.update({
-      where: { id },
-      data: validated,
-    })
+    // Mock implementation - in a real app, you'd update database
+    console.log("Ozone point updated:", { id, ...validated })
 
     revalidateTag("ozone")
     return { success: true }
@@ -242,9 +227,8 @@ export async function updateOzonePoint(id: number, formData: FormData) {
 
 export async function deleteOzonePoint(id: number) {
   try {
-    await prisma.ozonePoint.delete({
-      where: { id },
-    })
+    // Mock implementation - in a real app, you'd delete from database
+    console.log("Ozone point deleted:", id)
 
     revalidateTag("ozone")
     return { success: true }
@@ -266,9 +250,8 @@ export async function createMedia(formData: FormData) {
 
     const validated = mediaSchema.parse(data)
 
-    await prisma.media.create({
-      data: validated,
-    })
+    // Mock implementation - in a real app, you'd save to database
+    console.log("Media created:", validated)
 
     revalidateTag("media")
     return { success: true }
@@ -289,10 +272,8 @@ export async function updateMedia(id: number, formData: FormData) {
 
     const validated = mediaSchema.parse(data)
 
-    await prisma.media.update({
-      where: { id },
-      data: validated,
-    })
+    // Mock implementation - in a real app, you'd update database
+    console.log("Media updated:", { id, ...validated })
 
     revalidateTag("media")
     return { success: true }
@@ -304,9 +285,8 @@ export async function updateMedia(id: number, formData: FormData) {
 
 export async function deleteMedia(id: number) {
   try {
-    await prisma.media.delete({
-      where: { id },
-    })
+    // Mock implementation - in a real app, you'd delete from database
+    console.log("Media deleted:", id)
 
     revalidateTag("media")
     return { success: true }

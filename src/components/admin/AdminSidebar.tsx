@@ -4,7 +4,6 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Settings, Wrench, Star, Zap, Image, Home, LogOut } from "lucide-react"
-import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components"
 
 const navigation = [
   { name: "Dashboard", href: "/admin", icon: Home },
@@ -50,10 +49,10 @@ export default function AdminSidebar() {
       </nav>
 
       <div className='absolute bottom-0 w-64 p-4 border-t border-gray-200'>
-        <LogoutLink className='flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md transition-colors'>
+        <button className='flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md transition-colors'>
           <LogOut className='mr-3 h-5 w-5' />
           Logout
-        </LogoutLink>
+        </button>
       </div>
     </div>
   )
