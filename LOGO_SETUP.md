@@ -66,3 +66,4 @@ Your logos perfectly capture the Blue Wave brand with:
 
 The logos are now seamlessly integrated and will automatically adapt to different contexts throughout the website!
 
+
