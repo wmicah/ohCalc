@@ -1,417 +1,859 @@
+export interface SetEffect {
+  tier: number
+  pieces: number
+  effect: string
+  description: string
+}
+
 export interface Armor {
   id: string
   name: string
   gearType: "helmet" | "mask" | "torso" | "gloves" | "bottoms" | "shoes"
   rarity: "common" | "uncommon" | "rare" | "epic" | "legendary"
   image: string
+  set?: string // Armor set name if part of a set
+  setEffects?: SetEffect[] // Set effects for this armor set
+  isKeyGear?: boolean
   stats: {
-    [key: string]: number
+    hp: number
+    pollutionResist: number
+    psiIntensity: number
   }
-  perks?: string[]
-  isKeyArmor?: boolean
+  implementationStatus: "implemented" | "pending" | "planned"
+  source?: string
 }
 
 export const armorData: Armor[] = [
-  // Helmet Armors
+  // Regular Armor Sets (Complete 6-piece sets)
+
+  // Stormweaver Set
   {
-    id: "combat-helmet",
-    name: "Combat Helmet",
-    gearType: "helmet",
-    rarity: "common",
-    image: "/armor/combat-helmet.png",
-    stats: {
-      defense: 50,
-      hp: 100,
-    },
-  },
-  {
-    id: "tactical-helmet",
-    name: "Tactical Helmet",
-    gearType: "helmet",
-    rarity: "uncommon",
-    image: "/armor/tactical-helmet.png",
-    stats: {
-      defense: 75,
-      hp: 150,
-      critRate: 5,
-    },
-  },
-  {
-    id: "assault-helmet",
-    name: "Assault Helmet",
-    gearType: "helmet",
-    rarity: "rare",
-    image: "/armor/assault-helmet.png",
-    stats: {
-      defense: 100,
-      hp: 200,
-      critRate: 8,
-      weaponDamage: 10,
-    },
-  },
-  {
-    id: "elite-helmet",
-    name: "Elite Helmet",
-    gearType: "helmet",
-    rarity: "epic",
-    image: "/armor/elite-helmet.png",
-    stats: {
-      defense: 125,
-      hp: 250,
-      critRate: 12,
-      weaponDamage: 15,
-      elementalDamage: 10,
-    },
-  },
-  {
-    id: "legendary-helmet",
-    name: "Legendary Helmet",
+    id: "stormweaver-hood",
+    name: "Stormweaver Hood",
     gearType: "helmet",
     rarity: "legendary",
-    image: "/armor/legendary-helmet.png",
-    stats: {
-      defense: 150,
-      hp: 300,
-      critRate: 15,
-      weaponDamage: 20,
-      elementalDamage: 15,
-      statusDamage: 10,
-    },
-  },
-
-  // Mask Armors
-  {
-    id: "combat-mask",
-    name: "Combat Mask",
-    gearType: "mask",
-    rarity: "common",
-    image: "/armor/combat-mask.png",
-    stats: {
-      defense: 40,
-      hp: 80,
-    },
+    image: "/armor/stormweaver-hood.png",
+    set: "Stormweaver Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
   },
   {
-    id: "tactical-mask",
-    name: "Tactical Mask",
-    gearType: "mask",
-    rarity: "uncommon",
-    image: "/armor/tactical-mask.png",
-    stats: {
-      defense: 60,
-      hp: 120,
-      statusDamage: 8,
-    },
-  },
-  {
-    id: "assault-mask",
-    name: "Assault Mask",
-    gearType: "mask",
-    rarity: "rare",
-    image: "/armor/assault-mask.png",
-    stats: {
-      defense: 80,
-      hp: 160,
-      statusDamage: 12,
-      elementalDamage: 8,
-    },
-  },
-  {
-    id: "elite-mask",
-    name: "Elite Mask",
-    gearType: "mask",
-    rarity: "epic",
-    image: "/armor/elite-mask.png",
-    stats: {
-      defense: 100,
-      hp: 200,
-      statusDamage: 16,
-      elementalDamage: 12,
-      critDamage: 15,
-    },
-  },
-  {
-    id: "legendary-mask",
-    name: "Legendary Mask",
+    id: "stormweaver-mask",
+    name: "Stormweaver Mask",
     gearType: "mask",
     rarity: "legendary",
-    image: "/armor/legendary-mask.png",
-    stats: {
-      defense: 120,
-      hp: 240,
-      statusDamage: 20,
-      elementalDamage: 16,
-      critDamage: 20,
-      weaponDamage: 12,
-    },
-  },
-
-  // Torso Armors
-  {
-    id: "combat-vest",
-    name: "Combat Vest",
-    gearType: "torso",
-    rarity: "common",
-    image: "/armor/combat-vest.png",
-    stats: {
-      defense: 100,
-      hp: 200,
-    },
+    image: "/armor/stormweaver-mask.png",
+    set: "Stormweaver Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
   },
   {
-    id: "tactical-vest",
-    name: "Tactical Vest",
-    gearType: "torso",
-    rarity: "uncommon",
-    image: "/armor/tactical-vest.png",
-    stats: {
-      defense: 150,
-      hp: 300,
-      damageReduction: 5,
-    },
-  },
-  {
-    id: "assault-vest",
-    name: "Assault Vest",
-    gearType: "torso",
-    rarity: "rare",
-    image: "/armor/assault-vest.png",
-    stats: {
-      defense: 200,
-      hp: 400,
-      damageReduction: 8,
-      weaponDamage: 12,
-    },
-  },
-  {
-    id: "elite-vest",
-    name: "Elite Vest",
-    gearType: "torso",
-    rarity: "epic",
-    image: "/armor/elite-vest.png",
-    stats: {
-      defense: 250,
-      hp: 500,
-      damageReduction: 12,
-      weaponDamage: 18,
-      elementalDamage: 12,
-    },
-  },
-  {
-    id: "legendary-vest",
-    name: "Legendary Vest",
+    id: "stormweaver-tops",
+    name: "Stormweaver Tops",
     gearType: "torso",
     rarity: "legendary",
-    image: "/armor/legendary-vest.png",
-    stats: {
-      defense: 300,
-      hp: 600,
-      damageReduction: 15,
-      weaponDamage: 24,
-      elementalDamage: 18,
-      statusDamage: 15,
-    },
-  },
-
-  // Gloves Armors
-  {
-    id: "combat-gloves",
-    name: "Combat Gloves",
-    gearType: "gloves",
-    rarity: "common",
-    image: "/armor/combat-gloves.png",
-    stats: {
-      defense: 30,
-      hp: 60,
-    },
+    image: "/armor/stormweaver-tops.png",
+    set: "Stormweaver Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
   },
   {
-    id: "tactical-gloves",
-    name: "Tactical Gloves",
-    gearType: "gloves",
-    rarity: "uncommon",
-    image: "/armor/tactical-gloves.png",
-    stats: {
-      defense: 45,
-      hp: 90,
-      critRate: 8,
-    },
-  },
-  {
-    id: "assault-gloves",
-    name: "Assault Gloves",
-    gearType: "gloves",
-    rarity: "rare",
-    image: "/armor/assault-gloves.png",
-    stats: {
-      defense: 60,
-      hp: 120,
-      critRate: 12,
-      weaponDamage: 8,
-    },
-  },
-  {
-    id: "elite-gloves",
-    name: "Elite Gloves",
-    gearType: "gloves",
-    rarity: "epic",
-    image: "/armor/elite-gloves.png",
-    stats: {
-      defense: 75,
-      hp: 150,
-      critRate: 16,
-      weaponDamage: 12,
-      elementalDamage: 10,
-    },
-  },
-  {
-    id: "legendary-gloves",
-    name: "Legendary Gloves",
-    gearType: "gloves",
-    rarity: "legendary",
-    image: "/armor/legendary-gloves.png",
-    stats: {
-      defense: 90,
-      hp: 180,
-      critRate: 20,
-      weaponDamage: 16,
-      elementalDamage: 14,
-      statusDamage: 12,
-    },
-  },
-
-  // Bottoms Armors
-  {
-    id: "combat-pants",
-    name: "Combat Pants",
-    gearType: "bottoms",
-    rarity: "common",
-    image: "/armor/combat-pants.png",
-    stats: {
-      defense: 60,
-      hp: 120,
-    },
-  },
-  {
-    id: "tactical-pants",
-    name: "Tactical Pants",
-    gearType: "bottoms",
-    rarity: "uncommon",
-    image: "/armor/tactical-pants.png",
-    stats: {
-      defense: 90,
-      hp: 180,
-      movementSpeed: 5,
-    },
-  },
-  {
-    id: "assault-pants",
-    name: "Assault Pants",
-    gearType: "bottoms",
-    rarity: "rare",
-    image: "/armor/assault-pants.png",
-    stats: {
-      defense: 120,
-      hp: 240,
-      movementSpeed: 8,
-      weaponDamage: 10,
-    },
-  },
-  {
-    id: "elite-pants",
-    name: "Elite Pants",
-    gearType: "bottoms",
-    rarity: "epic",
-    image: "/armor/elite-pants.png",
-    stats: {
-      defense: 150,
-      hp: 300,
-      movementSpeed: 12,
-      weaponDamage: 15,
-      elementalDamage: 10,
-    },
-  },
-  {
-    id: "legendary-pants",
-    name: "Legendary Pants",
+    id: "stormweaver-pants",
+    name: "Stormweaver Pants",
     gearType: "bottoms",
     rarity: "legendary",
-    image: "/armor/legendary-pants.png",
-    stats: {
-      defense: 180,
-      hp: 360,
-      movementSpeed: 15,
-      weaponDamage: 20,
-      elementalDamage: 15,
-      statusDamage: 12,
-    },
-  },
-
-  // Shoes Armors
-  {
-    id: "combat-boots",
-    name: "Combat Boots",
-    gearType: "shoes",
-    rarity: "common",
-    image: "/armor/combat-boots.png",
-    stats: {
-      defense: 40,
-      hp: 80,
-    },
+    image: "/armor/stormweaver-pants.png",
+    set: "Stormweaver Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
   },
   {
-    id: "tactical-boots",
-    name: "Tactical Boots",
-    gearType: "shoes",
-    rarity: "uncommon",
-    image: "/armor/tactical-boots.png",
-    stats: {
-      defense: 60,
-      hp: 120,
-      movementSpeed: 8,
-    },
+    id: "stormweaver-gloves",
+    name: "Stormweaver Gloves",
+    gearType: "gloves",
+    rarity: "legendary",
+    image: "/armor/stormweaver-gloves.png",
+    set: "Stormweaver Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
   },
   {
-    id: "assault-boots",
-    name: "Assault Boots",
-    gearType: "shoes",
-    rarity: "rare",
-    image: "/armor/assault-boots.png",
-    stats: {
-      defense: 80,
-      hp: 160,
-      movementSpeed: 12,
-      weaponDamage: 8,
-    },
-  },
-  {
-    id: "elite-boots",
-    name: "Elite Boots",
-    gearType: "shoes",
-    rarity: "epic",
-    image: "/armor/elite-boots.png",
-    stats: {
-      defense: 100,
-      hp: 200,
-      movementSpeed: 16,
-      weaponDamage: 12,
-      elementalDamage: 8,
-    },
-  },
-  {
-    id: "legendary-boots",
-    name: "Legendary Boots",
+    id: "stormweaver-boots",
+    name: "Stormweaver Boots",
     gearType: "shoes",
     rarity: "legendary",
-    image: "/armor/legendary-boots.png",
-    stats: {
-      defense: 120,
-      hp: 240,
-      movementSpeed: 20,
-      weaponDamage: 16,
-      elementalDamage: 12,
-      statusDamage: 10,
-    },
+    image: "/armor/stormweaver-boots.png",
+    set: "Stormweaver Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+
+  // Gravity Tide Set
+  {
+    id: "gravity-tide-cap",
+    name: "Gravity Tide Cap",
+    gearType: "helmet",
+    rarity: "legendary",
+    image: "/armor/gravity-tide-cap.png",
+    set: "Gravity Tide Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "gravity-tide-mask",
+    name: "Gravity Tide Mask",
+    gearType: "mask",
+    rarity: "legendary",
+    image: "/armor/gravity-tide-mask.png",
+    set: "Gravity Tide Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "gravity-tide-tops",
+    name: "Gravity Tide Tops",
+    gearType: "torso",
+    rarity: "legendary",
+    image: "/armor/gravity-tide-tops.png",
+    set: "Gravity Tide Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "gravity-tide-pants",
+    name: "Gravity Tide Pants",
+    gearType: "bottoms",
+    rarity: "legendary",
+    image: "/armor/gravity-tide-pants.png",
+    set: "Gravity Tide Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "gravity-tide-gloves",
+    name: "Gravity Tide Gloves",
+    gearType: "gloves",
+    rarity: "legendary",
+    image: "/armor/gravity-tide-gloves.png",
+    set: "Gravity Tide Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "gravity-tide-boots",
+    name: "Gravity Tide Boots",
+    gearType: "shoes",
+    rarity: "legendary",
+    image: "/armor/gravity-tide-boots.png",
+    set: "Gravity Tide Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+
+  // Treacherous Tides Set
+  {
+    id: "treacherous-tides-helmet",
+    name: "Treacherous Tides Helmet",
+    gearType: "helmet",
+    rarity: "legendary",
+    image: "/armor/treacherous-tides-helmet.png",
+    set: "Treacherous Tides Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "treacherous-tides-mask",
+    name: "Treacherous Tides Mask",
+    gearType: "mask",
+    rarity: "legendary",
+    image: "/armor/treacherous-tides-mask.png",
+    set: "Treacherous Tides Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "treacherous-tides-tops",
+    name: "Treacherous Tides Tops",
+    gearType: "torso",
+    rarity: "legendary",
+    image: "/armor/treacherous-tides-tops.png",
+    set: "Treacherous Tides Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "treacherous-tides-pants",
+    name: "Treacherous Tides Pants",
+    gearType: "bottoms",
+    rarity: "legendary",
+    image: "/armor/treacherous-tides-pants.png",
+    set: "Treacherous Tides Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "treacherous-tides-gloves",
+    name: "Treacherous Tides Gloves",
+    gearType: "gloves",
+    rarity: "legendary",
+    image: "/armor/treacherous-tides-gloves.png",
+    set: "Treacherous Tides Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "treacherous-tides-boots",
+    name: "Treacherous Tides Boots",
+    gearType: "shoes",
+    rarity: "legendary",
+    image: "/armor/treacherous-tides-boots.png",
+    set: "Treacherous Tides Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+
+  // Blackstone Set
+  {
+    id: "blackstone-helmet",
+    name: "Blackstone Helmet",
+    gearType: "helmet",
+    rarity: "legendary",
+    image: "/armor/blackstone-helmet.png",
+    set: "Blackstone Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "blackstone-mask",
+    name: "Blackstone Mask",
+    gearType: "mask",
+    rarity: "legendary",
+    image: "/armor/blackstone-mask.png",
+    set: "Blackstone Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "blackstone-tops",
+    name: "Blackstone Tops",
+    gearType: "torso",
+    rarity: "legendary",
+    image: "/armor/blackstone-tops.png",
+    set: "Blackstone Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "blackstone-pants",
+    name: "Blackstone Pants",
+    gearType: "bottoms",
+    rarity: "legendary",
+    image: "/armor/blackstone-pants.png",
+    set: "Blackstone Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "blackstone-gloves",
+    name: "Blackstone Gloves",
+    gearType: "gloves",
+    rarity: "legendary",
+    image: "/armor/blackstone-gloves.png",
+    set: "Blackstone Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "blackstone-boots",
+    name: "Blackstone Boots",
+    gearType: "shoes",
+    rarity: "legendary",
+    image: "/armor/blackstone-boots.png",
+    set: "Blackstone Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+
+  // Bastille Set
+  {
+    id: "bastille-hood",
+    name: "Bastille Hood",
+    gearType: "helmet",
+    rarity: "legendary",
+    image: "/armor/bastille-hood.png",
+    set: "Bastille Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "bastille-mask",
+    name: "Bastille Mask",
+    gearType: "mask",
+    rarity: "legendary",
+    image: "/armor/bastille-mask.png",
+    set: "Bastille Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "bastille-tops",
+    name: "Bastille Tops",
+    gearType: "torso",
+    rarity: "legendary",
+    image: "/armor/bastille-tops.png",
+    set: "Bastille Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "bastille-pants",
+    name: "Bastille Pants",
+    gearType: "bottoms",
+    rarity: "legendary",
+    image: "/armor/bastille-pants.png",
+    set: "Bastille Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "bastille-gloves",
+    name: "Bastille Gloves",
+    gearType: "gloves",
+    rarity: "legendary",
+    image: "/armor/bastille-gloves.png",
+    set: "Bastille Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "bastille-boots",
+    name: "Bastille Boots",
+    gearType: "shoes",
+    rarity: "legendary",
+    image: "/armor/bastille-boots.png",
+    set: "Bastille Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+
+  // Shelterer Set
+  {
+    id: "shelterer-hood",
+    name: "Shelterer Hood",
+    gearType: "helmet",
+    rarity: "legendary",
+    image: "/armor/shelterer-hood.png",
+    set: "Shelterer Set",
+    setEffects: [
+      {
+        tier: 1,
+        pieces: 1,
+        effect: "status_damage_reduction",
+        description: "Status DMG Reduction: 15.0%",
+      },
+      {
+        tier: 2,
+        pieces: 2,
+        effect: "elemental_damage_bonus",
+        description: "Element DMG (Blaze, Frost, Shock, Blast) + 8%",
+      },
+      {
+        tier: 3,
+        pieces: 3,
+        effect: "deviant_energy_stacks",
+        description:
+          "Each weapon hit grants 1 stack of Deviant Energy. Every stack of Deviant Energy grants 1% Elemental DMG (Blaze, Frost, Shock, Blast). This effect can stack up to 20 times. Reloading removes half of the total stacks.",
+      },
+      {
+        tier: 4,
+        pieces: 4,
+        effect: "deviant_energy_max_increase",
+        description:
+          "Increase max Deviant Energy stack by 10. Grant 2 additional stacks when hitting a weakspot.",
+      },
+    ],
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "shelterer-mask",
+    name: "Shelterer Mask",
+    gearType: "mask",
+    rarity: "legendary",
+    image: "/armor/shelterer-mask.png",
+    set: "Shelterer Set",
+    setEffects: [
+      {
+        tier: 1,
+        pieces: 1,
+        effect: "status_damage_reduction",
+        description: "Status DMG Reduction: 15.0%",
+      },
+      {
+        tier: 2,
+        pieces: 2,
+        effect: "elemental_damage_bonus",
+        description: "Element DMG (Blaze, Frost, Shock, Blast) + 8%",
+      },
+      {
+        tier: 3,
+        pieces: 3,
+        effect: "deviant_energy_stacks",
+        description:
+          "Each weapon hit grants 1 stack of Deviant Energy. Every stack of Deviant Energy grants 1% Elemental DMG (Blaze, Frost, Shock, Blast). This effect can stack up to 20 times. Reloading removes half of the total stacks.",
+      },
+      {
+        tier: 4,
+        pieces: 4,
+        effect: "deviant_energy_max_increase",
+        description:
+          "Increase max Deviant Energy stack by 10. Grant 2 additional stacks when hitting a weakspot.",
+      },
+    ],
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "shelterer-tops",
+    name: "Shelterer Tops",
+    gearType: "torso",
+    rarity: "legendary",
+    image: "/armor/shelterer-tops.png",
+    set: "Shelterer Set",
+    setEffects: [
+      {
+        tier: 1,
+        pieces: 1,
+        effect: "status_damage_reduction",
+        description: "Status DMG Reduction: 15.0%",
+      },
+      {
+        tier: 2,
+        pieces: 2,
+        effect: "elemental_damage_bonus",
+        description: "Element DMG (Blaze, Frost, Shock, Blast) + 8%",
+      },
+      {
+        tier: 3,
+        pieces: 3,
+        effect: "deviant_energy_stacks",
+        description:
+          "Each weapon hit grants 1 stack of Deviant Energy. Every stack of Deviant Energy grants 1% Elemental DMG (Blaze, Frost, Shock, Blast). This effect can stack up to 20 times. Reloading removes half of the total stacks.",
+      },
+      {
+        tier: 4,
+        pieces: 4,
+        effect: "deviant_energy_max_increase",
+        description:
+          "Increase max Deviant Energy stack by 10. Grant 2 additional stacks when hitting a weakspot.",
+      },
+    ],
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "shelterer-pants",
+    name: "Shelterer Pants",
+    gearType: "bottoms",
+    rarity: "legendary",
+    image: "/armor/shelterer-pants.png",
+    set: "Shelterer Set",
+    setEffects: [
+      {
+        tier: 1,
+        pieces: 1,
+        effect: "status_damage_reduction",
+        description: "Status DMG Reduction: 15.0%",
+      },
+      {
+        tier: 2,
+        pieces: 2,
+        effect: "elemental_damage_bonus",
+        description: "Element DMG (Blaze, Frost, Shock, Blast) + 8%",
+      },
+      {
+        tier: 3,
+        pieces: 3,
+        effect: "deviant_energy_stacks",
+        description:
+          "Each weapon hit grants 1 stack of Deviant Energy. Every stack of Deviant Energy grants 1% Elemental DMG (Blaze, Frost, Shock, Blast). This effect can stack up to 20 times. Reloading removes half of the total stacks.",
+      },
+      {
+        tier: 4,
+        pieces: 4,
+        effect: "deviant_energy_max_increase",
+        description:
+          "Increase max Deviant Energy stack by 10. Grant 2 additional stacks when hitting a weakspot.",
+      },
+    ],
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "shelterer-gloves",
+    name: "Shelterer Gloves",
+    gearType: "gloves",
+    rarity: "legendary",
+    image: "/armor/shelterer-gloves.png",
+    set: "Shelterer Set",
+    setEffects: [
+      {
+        tier: 1,
+        pieces: 1,
+        effect: "status_damage_reduction",
+        description: "Status DMG Reduction: 15.0%",
+      },
+      {
+        tier: 2,
+        pieces: 2,
+        effect: "elemental_damage_bonus",
+        description: "Element DMG (Blaze, Frost, Shock, Blast) + 8%",
+      },
+      {
+        tier: 3,
+        pieces: 3,
+        effect: "deviant_energy_stacks",
+        description:
+          "Each weapon hit grants 1 stack of Deviant Energy. Every stack of Deviant Energy grants 1% Elemental DMG (Blaze, Frost, Shock, Blast). This effect can stack up to 20 times. Reloading removes half of the total stacks.",
+      },
+      {
+        tier: 4,
+        pieces: 4,
+        effect: "deviant_energy_max_increase",
+        description:
+          "Increase max Deviant Energy stack by 10. Grant 2 additional stacks when hitting a weakspot.",
+      },
+    ],
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "shelterer-boots",
+    name: "Shelterer Boots",
+    gearType: "shoes",
+    rarity: "legendary",
+    image: "/armor/shelterer-boots.png",
+    set: "Shelterer Set",
+    setEffects: [
+      {
+        tier: 1,
+        pieces: 1,
+        effect: "status_damage_reduction",
+        description: "Status DMG Reduction: 15.0%",
+      },
+      {
+        tier: 2,
+        pieces: 2,
+        effect: "elemental_damage_bonus",
+        description: "Element DMG (Blaze, Frost, Shock, Blast) + 8%",
+      },
+      {
+        tier: 3,
+        pieces: 3,
+        effect: "deviant_energy_stacks",
+        description:
+          "Each weapon hit grants 1 stack of Deviant Energy. Every stack of Deviant Energy grants 1% Elemental DMG (Blaze, Frost, Shock, Blast). This effect can stack up to 20 times. Reloading removes half of the total stacks.",
+      },
+      {
+        tier: 4,
+        pieces: 4,
+        effect: "deviant_energy_max_increase",
+        description:
+          "Increase max Deviant Energy stack by 10. Grant 2 additional stacks when hitting a weakspot.",
+      },
+    ],
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+
+  // Savior Set
+  {
+    id: "savior-hood",
+    name: "Savior Hood",
+    gearType: "helmet",
+    rarity: "legendary",
+    image: "/armor/savior-hood.png",
+    set: "Savior Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "savior-mask",
+    name: "Savior Mask",
+    gearType: "mask",
+    rarity: "legendary",
+    image: "/armor/savior-mask.png",
+    set: "Savior Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "savior-tops",
+    name: "Savior Tops",
+    gearType: "torso",
+    rarity: "legendary",
+    image: "/armor/savior-tops.png",
+    set: "Savior Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "savior-pants",
+    name: "Savior Pants",
+    gearType: "bottoms",
+    rarity: "legendary",
+    image: "/armor/savior-pants.png",
+    set: "Savior Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "savior-gloves",
+    name: "Savior Gloves",
+    gearType: "gloves",
+    rarity: "legendary",
+    image: "/armor/savior-gloves.png",
+    set: "Savior Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "savior-boots",
+    name: "Savior Boots",
+    gearType: "shoes",
+    rarity: "legendary",
+    image: "/armor/savior-boots.png",
+    set: "Savior Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+
+  // Renegade Set
+  {
+    id: "renegade-hood",
+    name: "Renegade Hood",
+    gearType: "helmet",
+    rarity: "legendary",
+    image: "/armor/renegade-hood.png",
+    set: "Renegade Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "renegade-mask",
+    name: "Renegade Mask",
+    gearType: "mask",
+    rarity: "legendary",
+    image: "/armor/renegade-mask.png",
+    set: "Renegade Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "renegade-tops",
+    name: "Renegade Tops",
+    gearType: "torso",
+    rarity: "legendary",
+    image: "/armor/renegade-tops.png",
+    set: "Renegade Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "renegade-pants",
+    name: "Renegade Pants",
+    gearType: "bottoms",
+    rarity: "legendary",
+    image: "/armor/renegade-pants.png",
+    set: "Renegade Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "renegade-gloves",
+    name: "Renegade Gloves",
+    gearType: "gloves",
+    rarity: "legendary",
+    image: "/armor/renegade-gloves.png",
+    set: "Renegade Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "renegade-boots",
+    name: "Renegade Boots",
+    gearType: "shoes",
+    rarity: "legendary",
+    image: "/armor/renegade-boots.png",
+    set: "Renegade Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+
+  // Lonewolf Set
+  {
+    id: "lonewolf-hood",
+    name: "Lonewolf Hood",
+    gearType: "helmet",
+    rarity: "legendary",
+    image: "/armor/lonewolf-hood.png",
+    set: "Lonewolf Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "lonewolf-mask",
+    name: "Lonewolf Mask",
+    gearType: "mask",
+    rarity: "legendary",
+    image: "/armor/lonewolf-mask.png",
+    set: "Lonewolf Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "lonewolf-tops",
+    name: "Lonewolf Tops",
+    gearType: "torso",
+    rarity: "legendary",
+    image: "/armor/lonewolf-tops.png",
+    set: "Lonewolf Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "lonewolf-pants",
+    name: "Lonewolf Pants",
+    gearType: "bottoms",
+    rarity: "legendary",
+    image: "/armor/lonewolf-pants.png",
+    set: "Lonewolf Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "lonewolf-gloves",
+    name: "Lonewolf Gloves",
+    gearType: "gloves",
+    rarity: "legendary",
+    image: "/armor/lonewolf-gloves.png",
+    set: "Lonewolf Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "lonewolf-boots",
+    name: "Lonewolf Boots",
+    gearType: "shoes",
+    rarity: "legendary",
+    image: "/armor/lonewolf-boots.png",
+    set: "Lonewolf Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+
+  // Cage Set
+  {
+    id: "cage-helmet",
+    name: "Cage Helmet",
+    gearType: "helmet",
+    rarity: "legendary",
+    image: "/armor/cage-helmet.png",
+    set: "Cage Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "cage-mask",
+    name: "Cage Mask",
+    gearType: "mask",
+    rarity: "legendary",
+    image: "/armor/cage-mask.png",
+    set: "Cage Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "cage-tops",
+    name: "Cage Tops",
+    gearType: "torso",
+    rarity: "legendary",
+    image: "/armor/cage-tops.png",
+    set: "Cage Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "cage-pants",
+    name: "Cage Pants",
+    gearType: "bottoms",
+    rarity: "legendary",
+    image: "/armor/cage-pants.png",
+    set: "Cage Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "cage-gloves",
+    name: "Cage Gloves",
+    gearType: "gloves",
+    rarity: "legendary",
+    image: "/armor/cage-gloves.png",
+    set: "Cage Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "cage-boots",
+    name: "Cage Boots",
+    gearType: "shoes",
+    rarity: "legendary",
+    image: "/armor/cage-boots.png",
+    set: "Cage Set",
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+
+  // Key Armor (Helmet only pieces)
+  {
+    id: "gas-mask-hood",
+    name: "Gas Mask Hood",
+    gearType: "helmet",
+    rarity: "legendary",
+    image: "/armor/gas-mask-hood.png",
+    isKeyGear: true,
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "yellow-paint-mask",
+    name: "Yellow Paint Mask",
+    gearType: "helmet",
+    rarity: "legendary",
+    image: "/armor/yellow-paint-mask.png",
+    isKeyGear: true,
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "gas-tight-helmet",
+    name: "Gas-tight Helmet",
+    gearType: "helmet",
+    rarity: "legendary",
+    image: "/armor/gas-tight-helmet.png",
+    isKeyGear: true,
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "pending",
+  },
+  {
+    id: "earthly-boots",
+    name: "Earthly Boots",
+    gearType: "shoes",
+    rarity: "legendary",
+    image: "/armor/earthly-boots.png",
+    isKeyGear: true,
+    stats: { hp: 60, pollutionResist: 9, psiIntensity: 16 },
+    implementationStatus: "implemented",
   },
 ]
 
@@ -426,4 +868,107 @@ export const getArmorById = (id: string): Armor | undefined => {
 
 export const getArmorByRarity = (rarity: Armor["rarity"]): Armor[] => {
   return armorData.filter((armor) => armor.rarity === rarity)
+}
+
+export const getArmorBySet = (setName: string): Armor[] => {
+  return armorData.filter((armor) => armor.set === setName)
+}
+
+export const getKeyGears = (): Armor[] => {
+  return armorData.filter((armor) => armor.isKeyGear)
+}
+
+export const getArmorByImplementationStatus = (
+  status: Armor["implementationStatus"]
+): Armor[] => {
+  return armorData.filter((armor) => armor.implementationStatus === status)
+}
+
+export const getAllArmorSets = (): string[] => {
+  const sets = new Set(armorData.map((armor) => armor.set).filter(Boolean))
+  return Array.from(sets)
+}
+
+// Set Effects Helper Functions
+export const getSetEffectsForSet = (setName: string): SetEffect[] => {
+  const armor = armorData.find(
+    (armor) => armor.set === setName && armor.setEffects
+  )
+  return armor?.setEffects || []
+}
+
+export const getActiveSetEffects = (
+  selectedArmor: Record<string, string>
+): {
+  setName: string
+  pieces: number
+  activeEffects: SetEffect[]
+}[] => {
+  const setCounts: Record<string, number> = {}
+
+  // Count pieces for each set
+  Object.entries(selectedArmor).forEach(([gearType, armorId]) => {
+    if (armorId) {
+      const armor = getArmorById(armorId)
+      if (armor?.set) {
+        setCounts[armor.set] = (setCounts[armor.set] || 0) + 1
+      }
+    }
+  })
+
+  // Get active effects for each set
+  const activeSets: {
+    setName: string
+    pieces: number
+    activeEffects: SetEffect[]
+  }[] = []
+
+  Object.entries(setCounts).forEach(([setName, pieces]) => {
+    const setEffects = getSetEffectsForSet(setName)
+    const activeEffects = setEffects.filter((effect) => pieces >= effect.pieces)
+
+    if (activeEffects.length > 0) {
+      activeSets.push({
+        setName,
+        pieces,
+        activeEffects,
+      })
+    }
+  })
+
+  return activeSets
+}
+
+export const calculateSetBonusElementalDamage = (
+  selectedArmor: Record<string, string>
+): number => {
+  const activeSets = getActiveSetEffects(selectedArmor)
+  let totalBonus = 0
+
+  activeSets.forEach((set) => {
+    set.activeEffects.forEach((effect) => {
+      if (effect.effect === "elemental_damage_bonus") {
+        totalBonus += 8 // +8% elemental damage bonus
+      }
+    })
+  })
+
+  return totalBonus
+}
+
+export const calculateSetBonusStatusDamage = (
+  selectedArmor: Record<string, string>
+): number => {
+  const activeSets = getActiveSetEffects(selectedArmor)
+  let totalBonus = 0
+
+  activeSets.forEach((set) => {
+    set.activeEffects.forEach((effect) => {
+      if (effect.effect === "status_damage_bonus") {
+        totalBonus += 8 // Assuming +8% status damage bonus (adjust as needed)
+      }
+    })
+  })
+
+  return totalBonus
 }
