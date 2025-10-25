@@ -71,6 +71,42 @@ export const weaponsData: Weapon[] = [
     ],
     unlockLevel: 40,
   },
+  {
+    id: "kam-abyss-glance",
+    name: "KAM - Abyss Glance",
+    type: "assault_rifle",
+    damageType: "elemental",
+    rarity: "legendary",
+    image: "/weapons/abyssglance.png",
+    description:
+      "Advanced assault rifle with Frost Vortex technology. Triggers frost vortexes on hit with enhanced damage frequency and stacking bonuses against non-Meta-Human enemies.",
+    baseStats: {
+      attack: 380,
+      fireRate: 600, // RPM
+      magazineSize: 40,
+      reloadTime: 2.5,
+      range: 35,
+    },
+    damageStats: {
+      weaponDamageBonus: 0,
+      critDamage: 35,
+      weakspotDamage: 45,
+      enemyBonus: 0,
+    },
+    elementalStats: {
+      psi: 250,
+      elemental: 30,
+      statusDamage: 0,
+    },
+    specialAbilities: [
+      "Hitting enemies triggers Frost Vortex (Cooldown: 7s, reduced by 0.5s per hit)",
+      "Frost Vortex DMG frequency increased by 100%",
+      "Hitting non-Meta-Human units within Frost Vortex increases final DMG by +5% (stacks up to 10 times)",
+      "Meta-Humans take 30% DMG from Frost Vortex",
+      "Frost Elemental DMG +30%",
+    ],
+    unlockLevel: 50,
+  },
   // Add more weapons here as you create them
 ]
 

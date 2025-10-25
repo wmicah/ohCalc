@@ -19,6 +19,15 @@ export interface Mod {
 export const modsData: Mod[] = [
   // Weapon Mods
   {
+    id: "cryo-blast",
+    name: "Cryo Blast",
+    gearType: "weapon",
+    modType: "Frost",
+    description:
+      "After triggering Frost Vortex, increases Frost Vortex DMG by +4%, up to 5 stacks, lasting 4s",
+    stats: {},
+  },
+  {
     id: "burning-wrath",
     name: "Burning Wrath",
     gearType: "weapon",
@@ -74,15 +83,6 @@ export const modsData: Mod[] = [
     modType: "Frost Vortex",
     description:
       "When an enemy at the center of the Frost Vortex is defeated, deal 50% Psi Intensity Ice DMG to enemies within 1m 1 time.",
-    stats: {},
-  },
-  {
-    id: "cryo-blast",
-    name: "Cryo Blast",
-    gearType: "weapon",
-    modType: "Frost Vortex",
-    description:
-      "After triggering a Frost Vortex, Frost Vortex DMG +4% for 4s. Up to 5 stacks (20% total)",
     stats: {},
   },
   {

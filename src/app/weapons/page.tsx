@@ -182,11 +182,41 @@ export default function WeaponsPage() {
                   ></div>
                 </div>
 
+                {/* Elemental Type Indicator */}
+                {weapon.specialAbilities?.some((ability: string) =>
+                  ability.toLowerCase().includes("frost")
+                ) && (
+                  <div className='absolute top-2 left-2'>
+                    <div
+                      className='w-2 h-2 rounded-full bg-blue-400 animate-pulse'
+                      title='Frost Weapon'
+                    ></div>
+                  </div>
+                )}
+                {weapon.specialAbilities?.some((ability: string) =>
+                  ability.toLowerCase().includes("burn")
+                ) && (
+                  <div className='absolute top-2 left-2'>
+                    <div
+                      className='w-2 h-2 rounded-full bg-orange-400 animate-pulse'
+                      title='Burn Weapon'
+                    ></div>
+                  </div>
+                )}
+
                 {/* Tooltip */}
                 <div className='absolute bottom-full left-0 right-0 mb-2 px-2 py-2 bg-gray-900 border border-gray-600 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-200 pointer-events-none z-10'>
                   <div className='text-xs text-gray-300 leading-relaxed'>
                     <div className='font-semibold text-white mb-2 text-center'>
-                      Weapon Features:
+                      {weapon.specialAbilities?.some((ability: string) =>
+                        ability.toLowerCase().includes("frost")
+                      )
+                        ? "Frost Weapon Features:"
+                        : weapon.specialAbilities?.some((ability: string) =>
+                            ability.toLowerCase().includes("burn")
+                          )
+                        ? "Burn Weapon Features:"
+                        : "Weapon Features:"}
                     </div>
                     {weapon.specialAbilities &&
                       weapon.specialAbilities.map(
@@ -195,7 +225,24 @@ export default function WeaponsPage() {
                             key={index}
                             className='mb-1 break-words'
                           >
-                            <span className='text-blue-400'>•</span> {ability}
+                            <span
+                              className={
+                                weapon.specialAbilities?.some(
+                                  (ability: string) =>
+                                    ability.toLowerCase().includes("frost")
+                                )
+                                  ? "text-blue-400"
+                                  : weapon.specialAbilities?.some(
+                                      (ability: string) =>
+                                        ability.toLowerCase().includes("burn")
+                                    )
+                                  ? "text-orange-400"
+                                  : "text-blue-400"
+                              }
+                            >
+                              •
+                            </span>{" "}
+                            {ability}
                           </div>
                         )
                       )}

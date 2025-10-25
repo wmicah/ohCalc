@@ -28,6 +28,7 @@ export default function WeaponDetailPage() {
   const [vulnerability, setVulnerability] = useState("")
   const [usingVulnAmp, setUsingVulnAmp] = useState(false)
   const [burnDamageBonus, setBurnDamageBonus] = useState("")
+  const [frostDamageBonus, setFrostDamageBonus] = useState("")
 
   // Armor and mod selection state
   const [selectedArmor, setSelectedArmor] = useState<Record<string, string>>({})
@@ -52,6 +53,9 @@ export default function WeaponDetailPage() {
     const hasBurn = weapon.specialAbilities?.some((ability) =>
       ability.toLowerCase().includes("burn")
     )
+    const hasFrost = weapon.specialAbilities?.some((ability) =>
+      ability.toLowerCase().includes("frost")
+    )
 
     if (hasBurn) {
       return {
@@ -63,6 +67,19 @@ export default function WeaponDetailPage() {
         secondaryAccent: "text-orange-300",
         highlight: "text-orange-200",
         border: "border-orange-500/30",
+      }
+    }
+
+    if (hasFrost) {
+      return {
+        background: "bg-gradient-to-br from-black via-blue-950 to-slate-900",
+        cardBg: "bg-black/60",
+        buttonBg:
+          "bg-gradient-to-r from-blue-800 to-slate-900 hover:from-blue-700 hover:to-slate-800 border-blue-500/50",
+        accent: "text-blue-400",
+        secondaryAccent: "text-blue-300",
+        highlight: "text-blue-200",
+        border: "border-blue-500/30",
       }
     }
 
@@ -85,6 +102,14 @@ export default function WeaponDetailPage() {
   const hasSheltererTier4 = sheltererSet && sheltererSet.pieces >= 4
   const deviantEnergyBonus = hasSheltererTier4 ? 30 : hasSheltererTier3 ? 20 : 0 // 30 stacks if 4+ pieces, 20 if 3+ pieces, 0 otherwise
 
+  // Check weapon type
+  const isFrostWeapon = weapon?.specialAbilities?.some((ability) =>
+    ability.toLowerCase().includes("frost")
+  )
+  const isBurnWeapon = weapon?.specialAbilities?.some((ability) =>
+    ability.toLowerCase().includes("burn")
+  )
+
   const burnResults = useMemo(() => {
     const psi = parseFloat(psiIntensity) || 0
     const elemental = parseFloat(elementalDamage) || 0
@@ -94,87 +119,201 @@ export default function WeaponDetailPage() {
     const markedTargetBonus =
       keyArmor === "shoes" && selectedArmor.shoes === "earthly-boots" ? 30 : 0
     const burnBonus = parseFloat(burnDamageBonus) || 0
+    const frostBonus = parseFloat(frostDamageBonus) || 0
 
     // Set bonuses are already included in game stats, so only add Deviant Energy
     const totalElemental = elemental + deviantEnergyBonus
     const totalStatus = status
 
-    // Blaze Amplifier increases factor 0.12 -> 0.15
-    const blazeAmplifierMod = selectedMods.mask === "blaze-amplifier"
-    const burnDamageFactor = blazeAmplifierMod ? 0.15 : 0.12
+    if (isFrostWeapon) {
+      // Check if this is KAM - Abyss Glance (has enhanced frequency)
+      const isAbyssGlance = weapon?.id === "kam-abyss-glance"
 
-    // Base per tick (with vuln/marked)
-    const baseDamagePerTick =
-      psi *
-      burnDamageFactor *
-      (1 + totalElemental / 100) *
-      (1 + totalStatus / 100) *
-      (1 + burnBonus / 100) *
-      (1 + (enemyMultiplier + markedTargetBonus) / 100) *
-      (1 + vuln / 100)
+      // Frost Vortex calculations
+      const frostBaseFactor = 0.5 // 50% Psi Intensity per 0.5s
+      const maxTicks = isAbyssGlance ? 11 : 8 // 11 ticks for Abyss Glance (max stacking at tick 10), 8 ticks for normal frost
 
-    // Normal (no vuln/marked)
-    const normalBaseDamagePerTick =
-      psi *
-      burnDamageFactor *
-      (1 + totalElemental / 100) *
-      (1 + totalStatus / 100) *
-      (1 + burnBonus / 100) *
-      (1 + enemyMultiplier / 100)
+      // Abyss Glance specific bonuses
+      // Meta-Human penalty is 30% damage against Meta-Humans (note: not applied in base calculation)
 
-    // Build rounded ticks
-    const makeTicks = (v: number) => ({
-      t1: Math.round(v * 1),
-      t2: Math.round(v * 2),
-      t3: Math.round(v * 3),
-      t4: Math.round(v * 4),
-      t5: Math.round(v * 5),
-      t6: Math.round(v * 6),
-      t7: Math.round(v * 7),
-    })
+      // Check for Frostwave Wither mod (mask slot) - gives +30% Frost Vortex Final DMG
+      const hasFrostwaveWither = selectedMods.mask === "frostwave-wither"
+      const frostwaveWitherBonus = hasFrostwaveWither ? 30 : 0
 
-    const normalTicks = makeTicks(normalBaseDamagePerTick)
-    const ticks = makeTicks(baseDamagePerTick)
+      // Base frost damage per tick (Status DMG)
+      // Actual Factor = 50% × (1 + Elemental%) × (1 + Status%)
+      // Note: Frostwave Wither is applied as a separate final multiplier, not here
+      const baseFrostPerTick =
+        psi *
+        frostBaseFactor *
+        (1 + totalElemental / 100) *
+        (1 + totalStatus / 100) *
+        (1 + frostBonus / 100) *
+        (1 + (enemyMultiplier + markedTargetBonus) / 100) *
+        (1 + vuln / 100)
 
-    // Explosion damage with step rounding to better match in‑game behavior
-    const step = (x: number) => Math.floor(x * 1000) / 1000
-    const exp1 = step(psi)
-    const exp2 = step(exp1 * (1 + totalElemental / 100))
-    const exp3 = step(exp2 * (1 + totalStatus / 100))
-    const exp4 = step(exp3 * (1 + 200 / 100)) // Initial bonus 200%
-    const exp5 = step(exp4 * (1 + 0 / 100)) // Final bonus 0%
-    const exp6 = step(exp5 * (1 + (enemyMultiplier + markedTargetBonus) / 100))
-    const exp7 = step(exp6 * (1 + vuln / 100))
-    const explosion = Math.round(exp7)
+      // Normal frost (no vuln/marked)
+      const normalFrostPerTick =
+        psi *
+        frostBaseFactor *
+        (1 + totalElemental / 100) *
+        (1 + totalStatus / 100) *
+        (1 + frostBonus / 100) *
+        (1 + enemyMultiplier / 100)
 
-    // Normal explosion (no vuln/marked)
-    const n1 = step(psi)
-    const n2 = step(n1 * (1 + totalElemental / 100))
-    const n3 = step(n2 * (1 + totalStatus / 100))
-    const n4 = step(n3 * (1 + 200 / 100))
-    const n5 = step(n4 * (1 + 0 / 100))
-    const n6 = step(n5 * (1 + enemyMultiplier / 100))
-    const normalExplosion = Math.round(n6)
+      // Build frost ticks (8 or 11 ticks total)
+      // For KAM - Abyss Glance: Each tick adds +5% stacking bonus (max +50% at tick 10)
+      // After tick 10, damage stays the same
+      const makeFrostTicks = (v: number, withCryoBlast: boolean = false) => {
+        const ticks: Record<string, number> = {}
+        for (let i = 1; i <= maxTicks; i++) {
+          if (isAbyssGlance) {
+            // KAM - Abyss Glance stacking bonus: +5% per tick, max +50% at tick 10
+            const stackingBonus = Math.min(i - 1, 10) * 5 // +5% per hit, max 10 hits = +50%
 
-    return {
-      // Normal
-      normalTick1: normalTicks.t1,
-      normalTick2: normalTicks.t2,
-      normalTick3: normalTicks.t3,
-      normalTick4: normalTicks.t4,
-      normalTick5: normalTicks.t5,
-      normalTick6: normalTicks.t6,
-      normalTick7: normalTicks.t7,
-      normalExplosion,
-      // Enhanced
-      tick1: ticks.t1,
-      tick2: ticks.t2,
-      tick3: ticks.t3,
-      tick4: ticks.t4,
-      tick5: ticks.t5,
-      tick6: ticks.t6,
-      tick7: ticks.t7,
-      explosion,
+            // Cryo Blast: +4% per stack, max 5 stacks = +20%
+            // Assuming you're continuously shooting, you get max stacks quickly
+            const cryoBlastBonus = withCryoBlast ? Math.min(i - 1, 5) * 4 : 0
+
+            // Calculate damage with all multipliers
+            let damage =
+              v * (1 + stackingBonus / 100) * (1 + cryoBlastBonus / 100)
+
+            // Frostwave Wither: +30% final DMG, decreasing by 8% per second
+            // Note: When re-proccing, the bonus resets to +30%, causing damage to fluctuate
+            // The calculator shows the decay over time, but max damage (455+) can occur when
+            // stacks align perfectly with a fresh +30% proc at later ticks
+            if (hasFrostwaveWither) {
+              const timeInSeconds = (i - 1) * 0.25 // Time elapsed since first tick
+              const frostwaveDecay = Math.max(0, 30 - timeInSeconds * 8) // Min 0%
+              damage = damage * (1 + frostwaveDecay / 100)
+            }
+
+            ticks[`t${i}`] = Math.round(damage)
+          } else {
+            // Normal frost: no stacking
+            let damage = v
+            if (hasFrostwaveWither) {
+              const timeInSeconds = (i - 1) * 0.5 // Normal frost ticks every 0.5s
+              const frostwaveDecay = Math.max(0, 30 - timeInSeconds * 8) // Min 0%
+              damage = damage * (1 + frostwaveDecay / 100)
+            }
+            ticks[`t${i}`] = Math.round(damage)
+          }
+        }
+        return ticks
+      }
+
+      const normalFrostTicks = makeFrostTicks(normalFrostPerTick)
+      const enhancedFrostTicks = makeFrostTicks(baseFrostPerTick)
+
+      // Check if Cryo Blast mod is equipped
+      const hasCryoBlast = selectedMods.weapon === "cryo-blast"
+      const cryoBlastFrostTicks = hasCryoBlast
+        ? makeFrostTicks(baseFrostPerTick, true)
+        : null
+
+      // Build the result object dynamically
+      const result: any = {
+        normalExplosion: 0, // Frost doesn't have explosion
+        explosion: 0, // Frost doesn't have explosion
+      }
+
+      // Add normal ticks
+      for (let i = 1; i <= maxTicks; i++) {
+        result[`normalTick${i}`] = normalFrostTicks[`t${i}`]
+        result[`tick${i}`] = enhancedFrostTicks[`t${i}`]
+      }
+
+      // Add Cryo Blast ticks if mod is equipped
+      if (hasCryoBlast && cryoBlastFrostTicks) {
+        for (let i = 1; i <= maxTicks; i++) {
+          result[`cryoBlastTick${i}`] = cryoBlastFrostTicks[`t${i}`]
+        }
+      }
+
+      return result
+    } else {
+      // Burn weapon calculations (existing logic)
+      // Blaze Amplifier increases factor 0.12 -> 0.15
+      const blazeAmplifierMod = selectedMods.mask === "blaze-amplifier"
+      const burnDamageFactor = blazeAmplifierMod ? 0.15 : 0.12
+
+      // Base per tick (with vuln/marked)
+      const baseDamagePerTick =
+        psi *
+        burnDamageFactor *
+        (1 + totalElemental / 100) *
+        (1 + totalStatus / 100) *
+        (1 + burnBonus / 100) *
+        (1 + (enemyMultiplier + markedTargetBonus) / 100) *
+        (1 + vuln / 100)
+
+      // Normal (no vuln/marked)
+      const normalBaseDamagePerTick =
+        psi *
+        burnDamageFactor *
+        (1 + totalElemental / 100) *
+        (1 + totalStatus / 100) *
+        (1 + burnBonus / 100) *
+        (1 + enemyMultiplier / 100)
+
+      // Build rounded ticks
+      const makeTicks = (v: number) => ({
+        t1: Math.round(v * 1),
+        t2: Math.round(v * 2),
+        t3: Math.round(v * 3),
+        t4: Math.round(v * 4),
+        t5: Math.round(v * 5),
+        t6: Math.round(v * 6),
+        t7: Math.round(v * 7),
+      })
+
+      const normalTicks = makeTicks(normalBaseDamagePerTick)
+      const ticks = makeTicks(baseDamagePerTick)
+
+      // Explosion damage with step rounding to better match in‑game behavior
+      const step = (x: number) => Math.floor(x * 1000) / 1000
+      const exp1 = step(psi)
+      const exp2 = step(exp1 * (1 + totalElemental / 100))
+      const exp3 = step(exp2 * (1 + totalStatus / 100))
+      const exp4 = step(exp3 * (1 + 200 / 100)) // Initial bonus 200%
+      const exp5 = step(exp4 * (1 + 0 / 100)) // Final bonus 0%
+      const exp6 = step(
+        exp5 * (1 + (enemyMultiplier + markedTargetBonus) / 100)
+      )
+      const exp7 = step(exp6 * (1 + vuln / 100))
+      const explosion = Math.round(exp7)
+
+      // Normal explosion (no vuln/marked)
+      const n1 = step(psi)
+      const n2 = step(n1 * (1 + totalElemental / 100))
+      const n3 = step(n2 * (1 + totalStatus / 100))
+      const n4 = step(n3 * (1 + 200 / 100))
+      const n5 = step(n4 * (1 + 0 / 100))
+      const n6 = step(n5 * (1 + enemyMultiplier / 100))
+      const normalExplosion = Math.round(n6)
+
+      return {
+        // Normal
+        normalTick1: normalTicks.t1,
+        normalTick2: normalTicks.t2,
+        normalTick3: normalTicks.t3,
+        normalTick4: normalTicks.t4,
+        normalTick5: normalTicks.t5,
+        normalTick6: normalTicks.t6,
+        normalTick7: normalTicks.t7,
+        normalExplosion,
+        // Enhanced
+        tick1: ticks.t1,
+        tick2: ticks.t2,
+        tick3: ticks.t3,
+        tick4: ticks.t4,
+        tick5: ticks.t5,
+        tick6: ticks.t6,
+        tick7: ticks.t7,
+        explosion,
+      }
     }
   }, [
     psiIntensity,
@@ -182,12 +321,14 @@ export default function WeaponDetailPage() {
     statusDamage,
     enemyDamageMultiplier,
     burnDamageBonus,
+    frostDamageBonus,
     selectedMods,
     selectedArmor,
     vulnerability, // ✅ missing in original
     usingVulnAmp, // ✅ missing in original
     keyArmor, // ✅ missing in original
     deviantEnergyBonus,
+    weapon, // Add weapon to dependencies for frost detection
   ])
 
   if (!weapon) {
@@ -202,7 +343,7 @@ export default function WeaponDetailPage() {
 
   return (
     <div
-      className={`min-h-screen ${theme.background} relative overflow-hidden`}
+      className={`min-h-screen ${theme.background} relative overflow-hidden pt-16`}
     >
       {/* Background Elements */}
       <div className='absolute inset-0 pointer-events-none'>
@@ -314,18 +455,18 @@ export default function WeaponDetailPage() {
       </div>
 
       {/* Main Content */}
-      <div className='relative z-50 max-w-7xl mx-auto px-6 py-12'>
+      <div className='relative z-50 max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8'>
         {/* Header */}
-        <div className='mb-12'>
+        <div className='mb-6 sm:mb-8'>
           <Link
             href='/weapons'
-            className={`inline-flex items-center space-x-2 ${theme.accent} hover:text-white transition-colors mb-6`}
+            className={`inline-flex items-center space-x-2 ${theme.accent} hover:text-white transition-colors mb-4 sm:mb-6 bg-black/20 px-3 py-2 rounded-lg border ${theme.border} hover:bg-black/40 hover:scale-105 text-sm sm:text-base`}
           >
-            <ArrowLeft className='w-5 h-5' />
-            <span>Back to Weapons</span>
+            <ArrowLeft className='w-4 h-4 sm:w-5 sm:h-5' />
+            <span className='font-medium'>Back to Weapons</span>
           </Link>
 
-          <div className='grid grid-cols-12 gap-8 items-start'>
+          <div className='grid grid-cols-12 gap-4 sm:gap-6 md:gap-8 items-start'>
             {/* Weapon Info */}
             <div className='col-span-12 md:col-span-7'>
               <div className='flex items-center space-x-4 mb-4'>
@@ -341,26 +482,28 @@ export default function WeaponDetailPage() {
                   {weapon.rarity.toUpperCase()}
                 </span>
               </div>
-              <h1 className='text-4xl md:text-6xl font-bold text-white mb-6 tracking-tight'>
+              <h1 className='text-3xl sm:text-4xl md:text-6xl font-bold text-white mb-4 sm:mb-6 tracking-tight'>
                 {weapon.name}
               </h1>
-              <p className='text-xl text-gray-300 leading-relaxed'>
+              <p className='text-base sm:text-lg md:text-xl text-gray-300 leading-relaxed'>
                 {weapon.description}
               </p>
             </div>
 
             {/* Special Abilities */}
             <div className='col-span-12 md:col-span-5'>
-              <h2 className='text-2xl font-bold text-white mb-6'>
+              <h2 className='text-xl sm:text-2xl font-bold text-white mb-4 sm:mb-6'>
                 Special Abilities
               </h2>
-              <div className='space-y-4'>
+              <div className='space-y-3 sm:space-y-4'>
                 {weapon.specialAbilities?.map((ability, index) => (
                   <div
                     key={index}
-                    className={`${theme.cardBg} ${theme.border} border rounded-3xl p-6 hover:scale-105 transition-all duration-300`}
+                    className={`${theme.cardBg} ${theme.border} border rounded-2xl sm:rounded-3xl p-4 sm:p-6 hover:scale-105 transition-all duration-300`}
                   >
-                    <p className='text-gray-200 leading-relaxed'>{ability}</p>
+                    <p className='text-sm sm:text-base text-gray-200 leading-relaxed'>
+                      {ability}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -449,6 +592,105 @@ export default function WeaponDetailPage() {
             </div>
           </div>
         )}
+
+        {/* Frost Effect Details */}
+        {weapon.specialAbilities?.some((ability) =>
+          ability.toLowerCase().includes("frost")
+        ) && (
+          <div
+            className={`${theme.cardBg} ${theme.border} border rounded-3xl p-8 mb-12`}
+          >
+            <h2 className='text-3xl font-bold text-white mb-6'>
+              Frost Vortex Effect Details
+            </h2>
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-8'>
+              <div>
+                <h3 className='text-xl font-semibold text-white mb-4'>
+                  Properties
+                </h3>
+                <ul className='space-y-2 text-gray-300'>
+                  <li>• Base Damage: 50% Psi Intensity per 0.5s</li>
+                  <li>
+                    • Duration: 4 seconds (
+                    {weapon.id === "kam-abyss-glance"
+                      ? "11 ticks (max stacking at tick 10)"
+                      : "8 ticks"}
+                    )
+                  </li>
+                  <li>• Area of Effect: 4.5m radius</li>
+                  <li>• Damage Type: Status DMG (Frost)</li>
+                  <li>• Max Vortexes: 1 at a time</li>
+                  <li>• Cannot Crit or hit Weakspots</li>
+                  {weapon.id === "kam-abyss-glance" && (
+                    <>
+                      <li>
+                        •{" "}
+                        <span className='text-blue-400'>
+                          Enhanced Frequency:
+                        </span>{" "}
+                        100% increased tick rate (0.25s intervals)
+                      </li>
+                      <li>
+                        • <span className='text-blue-400'>Stacking Bonus:</span>{" "}
+                        +5% damage per hit (max +50%)
+                      </li>
+                    </>
+                  )}
+                </ul>
+              </div>
+              <div>
+                <h3 className='text-xl font-semibold text-white mb-4'>
+                  Formula:{" "}
+                  <button
+                    onClick={() => setFormulaExpanded(!formulaExpanded)}
+                    className='inline-flex items-center space-x-1 text-blue-400 hover:text-blue-300 transition-colors'
+                  >
+                    {formulaExpanded ? (
+                      <ChevronDown className='w-5 h-5' />
+                    ) : (
+                      <ChevronRight className='w-5 h-5' />
+                    )}
+                  </button>
+                </h3>
+                <div className='bg-black/40 rounded-lg p-4 font-mono text-sm'>
+                  <p className='text-gray-300'>
+                    Actual Factor = 50% × (1 + Frost Vortex DMG Factor Bonus) ×
+                    (1 + Frost Vortex Final DMG Bonus)
+                  </p>
+                </div>
+                {formulaExpanded && (
+                  <div className='mt-4 bg-black/40 rounded-lg p-4 text-sm'>
+                    <p className='text-gray-300 mb-2'>
+                      <strong className='text-blue-400'>Base Factor:</strong>{" "}
+                      50% Psi Intensity per 0.5s
+                    </p>
+                    <p className='text-gray-300 mb-2'>
+                      <strong className='text-blue-400'>
+                        Frost Vortex DMG Factor Bonus:
+                      </strong>{" "}
+                      Increases the base 50% factor
+                    </p>
+                    <p className='text-gray-300 mb-2'>
+                      <strong className='text-blue-400'>
+                        Frost Vortex Final DMG Bonus:
+                      </strong>{" "}
+                      Final damage multiplier
+                    </p>
+                    <p className='text-gray-300 mb-4'>
+                      <strong className='text-blue-400'>Status DMG%:</strong>{" "}
+                      Affects final damage
+                    </p>
+                    <p className='text-gray-300'>
+                      <strong className='text-blue-400'>Example:</strong> 500
+                      Psi × 0.50 × (1 + 0.2) × (1 + 0.1) × (1 + 0.15) = 379.5
+                      damage per tick
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Weapon-Specific Calculator */}
@@ -459,7 +701,15 @@ export default function WeaponDetailPage() {
             <h3
               className={`text-4xl md:text-6xl font-bold mb-6  ${theme.highlight}`}
             >
-              Boom Boom Damage Calculator
+              {weapon.specialAbilities?.some((ability) =>
+                ability.toLowerCase().includes("frost")
+              )
+                ? "Frost Vortex Damage Calculator"
+                : weapon.specialAbilities?.some((ability) =>
+                    ability.toLowerCase().includes("burn")
+                  )
+                ? "Boom Boom Damage Calculator"
+                : "Weapon Damage Calculator"}
             </h3>
           </div>
 
@@ -526,19 +776,36 @@ export default function WeaponDetailPage() {
                       autoComplete='off'
                     />
                   </div>
-                  <div>
-                    <label className='block text-sm font-medium text-gray-300 mb-2'>
-                      Burn Damage Bonus (%)
-                    </label>
-                    <input
-                      type='number'
-                      value={burnDamageBonus}
-                      onChange={(e) => setBurnDamageBonus(e.target.value)}
-                      className='w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:border-orange-400 focus:outline-none transition-colors cursor-text'
-                      placeholder='Enter burn damage bonus %'
-                      autoComplete='off'
-                    />
-                  </div>
+                  {isBurnWeapon && (
+                    <div>
+                      <label className='block text-sm font-medium text-gray-300 mb-2'>
+                        Burn Damage Bonus (%)
+                      </label>
+                      <input
+                        type='number'
+                        value={burnDamageBonus}
+                        onChange={(e) => setBurnDamageBonus(e.target.value)}
+                        className='w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:border-orange-400 focus:outline-none transition-colors cursor-text'
+                        placeholder='Enter burn damage bonus %'
+                        autoComplete='off'
+                      />
+                    </div>
+                  )}
+                  {isFrostWeapon && (
+                    <div>
+                      <label className='block text-sm font-medium text-gray-300 mb-2'>
+                        Frost Damage Bonus (%)
+                      </label>
+                      <input
+                        type='number'
+                        value={frostDamageBonus}
+                        onChange={(e) => setFrostDamageBonus(e.target.value)}
+                        className='w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none transition-colors cursor-text'
+                        placeholder='Enter frost damage bonus %'
+                        autoComplete='off'
+                      />
+                    </div>
+                  )}
                   <div>
                     <label className='block text-sm font-medium text-gray-300 mb-2'>
                       <span className='text-blue-400'>Vulnerability</span>{" "}
@@ -716,10 +983,21 @@ export default function WeaponDetailPage() {
                 <div className='space-y-4'>
                   <div className='bg-gray-800/50 rounded-lg p-4 border border-gray-600'>
                     <div className='text-sm font-medium text-gray-400 mb-3'>
-                      Burn Damage (Per Tick)
+                      {weapon.specialAbilities?.some((ability) =>
+                        ability.toLowerCase().includes("frost")
+                      )
+                        ? "Frost Vortex Damage (Per Tick)"
+                        : "Burn Damage (Per Tick)"}
                     </div>
                     <div className='space-y-1'>
-                      {[1, 2, 3, 4, 5, 6, 7].map((tick) => (
+                      {(weapon.specialAbilities?.some((ability) =>
+                        ability.toLowerCase().includes("frost")
+                      )
+                        ? weapon.id === "kam-abyss-glance"
+                          ? [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+                          : [1, 2, 3, 4, 5, 6, 7, 8]
+                        : [1, 2, 3, 4, 5, 6, 7]
+                      ).map((tick) => (
                         <div
                           key={tick}
                           className='flex justify-between items-center'
@@ -727,7 +1005,7 @@ export default function WeaponDetailPage() {
                           <span className='text-gray-300 text-sm'>
                             Tick {tick}:
                           </span>
-                          <span className='text-orange-400 font-mono text-sm'>
+                          <span className={`${theme.accent} font-mono text-sm`}>
                             {
                               burnResults[
                                 `tick${tick}` as keyof typeof burnResults
@@ -739,19 +1017,56 @@ export default function WeaponDetailPage() {
                     </div>
                   </div>
 
-                  <div className='bg-gray-800/50 rounded-lg p-4 border border-gray-600'>
-                    <div className='text-sm font-medium text-gray-400 mb-3'>
-                      Explosion Damage
+                  {/* Cryo Blast Mod Results */}
+                  {isFrostWeapon &&
+                    selectedMods.weapon === "cryo-blast" &&
+                    weapon?.id === "kam-abyss-glance" && (
+                      <div className='bg-blue-800/30 rounded-lg p-4 border border-blue-500/50'>
+                        <div className='text-sm font-medium text-blue-300 mb-3'>
+                          Frost Vortex Damage (With Cryo Blast Mod)
+                        </div>
+                        <div className='space-y-1'>
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((tick) => (
+                            <div
+                              key={tick}
+                              className='flex justify-between items-center'
+                            >
+                              <span className='text-gray-300 text-sm'>
+                                Tick {tick}:
+                              </span>
+                              <span className='text-blue-400 font-mono text-sm'>
+                                {
+                                  burnResults[
+                                    `cryoBlastTick${tick}` as keyof typeof burnResults
+                                  ] as number
+                                }
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className='mt-3 text-xs text-blue-200'>
+                          Cryo Blast: +4% per stack (max +20%)
+                        </div>
+                      </div>
+                    )}
+
+                  {!weapon.specialAbilities?.some((ability) =>
+                    ability.toLowerCase().includes("frost")
+                  ) && (
+                    <div className='bg-gray-800/50 rounded-lg p-4 border border-gray-600'>
+                      <div className='text-sm font-medium text-gray-400 mb-3'>
+                        Explosion Damage
+                      </div>
+                      <div className='flex justify-between items-center'>
+                        <span className='text-gray-300 text-sm'>
+                          Base Explosion:
+                        </span>
+                        <span className={`${theme.accent} font-mono text-sm`}>
+                          {burnResults.explosion}
+                        </span>
+                      </div>
                     </div>
-                    <div className='flex justify-between items-center'>
-                      <span className='text-gray-300 text-sm'>
-                        Base Explosion:
-                      </span>
-                      <span className='text-orange-400 font-mono text-sm'>
-                        {burnResults.explosion}
-                      </span>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
 
@@ -815,9 +1130,15 @@ export default function WeaponDetailPage() {
                               Important Effects:
                             </div>
                             <div className='space-y-1'>
-                              {selectedMods.mask === "blaze-amplifier" && (
-                                <div className='text-orange-300'>
-                                  • Blaze Amplifier: Burn Factor 0.12 → 0.15
+                              {isBurnWeapon &&
+                                selectedMods.mask === "blaze-amplifier" && (
+                                  <div className='text-orange-300'>
+                                    • Blaze Amplifier: Burn Factor 0.12 → 0.15
+                                  </div>
+                                )}
+                              {isFrostWeapon && (
+                                <div className='text-blue-300'>
+                                  • Frost Weapon: Status AND Elemental DMG based
                                 </div>
                               )}
                               {!selectedMods.mask && (
@@ -902,33 +1223,68 @@ export default function WeaponDetailPage() {
                       </h4>
                       <div className='bg-gray-800/50 rounded-lg p-4 border border-gray-600'>
                         <div className='text-sm text-gray-300 leading-relaxed'>
-                          <p className='mb-3'>
-                            <strong className='text-orange-400'>
-                              How Burn Damage Works:
-                            </strong>{" "}
-                            Your Psi Intensity is multiplied by a burn factor
-                            (0.12 base, 0.15 with Blaze Amplifier), then
-                            enhanced by Elemental Damage, Status Damage, Burn
-                            Damage Bonus, Enemy Damage Multiplier, and optional
-                            Vulnerability effects.
-                          </p>
-                          <p className='mb-3'>
-                            <strong className='text-orange-400'>
-                              Formula:
-                            </strong>{" "}
-                            Final Damage = Psi Intensity × Burn Factor × (1 +
-                            Elemental%) × (1 + Status%) × (1 + Burn Bonus%) × (1
-                            + Enemy Multiplier%) × (1 + Vulnerability%)
-                          </p>
-                          <p>
-                            <strong className='text-orange-400'>
-                              Tick vs Explosion:
-                            </strong>{" "}
-                            Tick damage uses the full formula above. Explosion
-                            damage uses Psi Intensity directly (not multiplied
-                            by burn factor) and gets a 200% special ability
-                            bonus.
-                          </p>
+                          {isFrostWeapon ? (
+                            <>
+                              <p className='mb-3'>
+                                <strong className='text-blue-400'>
+                                  How Frost Vortex Damage Works:
+                                </strong>{" "}
+                                Your Psi Intensity is multiplied by a frost
+                                factor (50% base), then enhanced by Elemental
+                                Damage, Status Damage, Enemy Damage Multiplier,
+                                Vulnerability effects, and stacking bonuses (for
+                                KAM - Abyss Glance).
+                              </p>
+                              <p className='mb-3'>
+                                <strong className='text-blue-400'>
+                                  Formula:
+                                </strong>{" "}
+                                Final Damage = Psi Intensity × 0.5 × (1 +
+                                Elemental%) × (1 + Status%) × (1 + Enemy
+                                Multiplier%) × (1 + Vulnerability%) × (1 +
+                                Stacking Bonus%)
+                              </p>
+                              <p>
+                                <strong className='text-blue-400'>
+                                  Tick Calculation:
+                                </strong>{" "}
+                                Each tick multiplies the base damage by the
+                                stack count, then rounds. Frost has no explosion
+                                damage.
+                              </p>
+                            </>
+                          ) : (
+                            <>
+                              <p className='mb-3'>
+                                <strong className='text-orange-400'>
+                                  How Burn Damage Works:
+                                </strong>{" "}
+                                Your Psi Intensity is multiplied by a burn
+                                factor (0.12 base, 0.15 with Blaze Amplifier),
+                                then enhanced by Elemental Damage, Status
+                                Damage, Burn Damage Bonus, Enemy Damage
+                                Multiplier, and optional Vulnerability effects.
+                              </p>
+                              <p className='mb-3'>
+                                <strong className='text-orange-400'>
+                                  Formula:
+                                </strong>{" "}
+                                Final Damage = Psi Intensity × Burn Factor × (1
+                                + Elemental%) × (1 + Status%) × (1 + Burn
+                                Bonus%) × (1 + Enemy Multiplier%) × (1 +
+                                Vulnerability%)
+                              </p>
+                              <p>
+                                <strong className='text-orange-400'>
+                                  Tick vs Explosion:
+                                </strong>{" "}
+                                Tick damage uses the full formula above.
+                                Explosion damage uses Psi Intensity directly
+                                (not multiplied by burn factor) and gets a 200%
+                                special ability bonus.
+                              </p>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -938,231 +1294,321 @@ export default function WeaponDetailPage() {
                       <h4 className='text-sm font-semibold text-gray-400 mb-3'>
                         STEP-BY-STEP CALCULATIONS
                       </h4>
-                      <div className='grid grid-cols-1 lg:grid-cols-3 gap-4'>
+                      <div
+                        className={`grid grid-cols-1 gap-4 ${
+                          isBurnWeapon ? "lg:grid-cols-3" : "lg:grid-cols-2"
+                        }`}
+                      >
                         {/* Column 1: Base Damage Steps */}
+                        {isBurnWeapon && (
+                          <div className='bg-gray-800/50 rounded-lg p-4 border border-gray-600'>
+                            <div className='text-sm font-medium text-gray-400 mb-3'>
+                              BASE DAMAGE CALCULATION
+                            </div>
+                            <div className='space-y-2 text-xs text-gray-400 font-mono leading-relaxed'>
+                              <div>
+                                <span className='text-gray-300'>Step 1:</span>{" "}
+                                Psi Intensity = {parseFloat(psiIntensity) || 0}
+                              </div>
+                              <div>
+                                <span className='text-gray-300'>Step 2:</span>{" "}
+                                Burn Factor ={" "}
+                                {selectedMods.mask === "blaze-amplifier"
+                                  ? "0.15"
+                                  : "0.12"}
+                                {selectedMods.mask === "blaze-amplifier" &&
+                                  " (Blaze Amplifier)"}
+                              </div>
+                              <div>
+                                <span className='text-gray-300'>Step 3:</span>{" "}
+                                Base Damage = {parseFloat(psiIntensity) || 0} ×{" "}
+                                {selectedMods.mask === "blaze-amplifier"
+                                  ? "0.15"
+                                  : "0.12"}{" "}
+                                ={" "}
+                                {(
+                                  (parseFloat(psiIntensity) || 0) *
+                                  (selectedMods.mask === "blaze-amplifier"
+                                    ? 0.15
+                                    : 0.12)
+                                ).toFixed(2)}
+                              </div>
+                              <div>
+                                <span className='text-gray-300'>Step 4:</span>{" "}
+                                Elemental Damage ={" "}
+                                {parseFloat(elementalDamage) || 0}%
+                                {deviantEnergyBonus > 0 &&
+                                  ` + ${deviantEnergyBonus}% (Deviant Energy)`}
+                              </div>
+                              <div>
+                                <span className='text-gray-300'>Step 5:</span>{" "}
+                                After Elemental ={" "}
+                                {(
+                                  (parseFloat(psiIntensity) || 0) *
+                                  (selectedMods.mask === "blaze-amplifier"
+                                    ? 0.15
+                                    : 0.12)
+                                ).toFixed(2)}{" "}
+                                × (1 +{" "}
+                                {(parseFloat(elementalDamage) || 0) +
+                                  deviantEnergyBonus}
+                                /100) ={" "}
+                                {(
+                                  (parseFloat(psiIntensity) || 0) *
+                                  (selectedMods.mask === "blaze-amplifier"
+                                    ? 0.15
+                                    : 0.12) *
+                                  (1 +
+                                    ((parseFloat(elementalDamage) || 0) +
+                                      deviantEnergyBonus) /
+                                      100)
+                                ).toFixed(2)}
+                              </div>
+                              <div>
+                                <span className='text-gray-300'>Step 6:</span>{" "}
+                                Status Damage = {parseFloat(statusDamage) || 0}%
+                              </div>
+                              <div>
+                                <span className='text-gray-300'>Step 7:</span>{" "}
+                                After Status ={" "}
+                                {(
+                                  (parseFloat(psiIntensity) || 0) *
+                                  (selectedMods.mask === "blaze-amplifier"
+                                    ? 0.15
+                                    : 0.12) *
+                                  (1 +
+                                    ((parseFloat(elementalDamage) || 0) +
+                                      deviantEnergyBonus) /
+                                      100)
+                                ).toFixed(2)}{" "}
+                                × (1 + {parseFloat(statusDamage) || 0}/100) ={" "}
+                                {(
+                                  (parseFloat(psiIntensity) || 0) *
+                                  (selectedMods.mask === "blaze-amplifier"
+                                    ? 0.15
+                                    : 0.12) *
+                                  (1 +
+                                    ((parseFloat(elementalDamage) || 0) +
+                                      deviantEnergyBonus) /
+                                      100) *
+                                  (1 + (parseFloat(statusDamage) || 0) / 100)
+                                ).toFixed(2)}
+                              </div>
+                              <div>
+                                <span className='text-gray-300'>Step 8:</span>{" "}
+                                Burn Damage Bonus ={" "}
+                                {parseFloat(burnDamageBonus) || 0}%
+                              </div>
+                              <div>
+                                <span className='text-gray-300'>Step 9:</span>{" "}
+                                After Burn Bonus ={" "}
+                                {(
+                                  (parseFloat(psiIntensity) || 0) *
+                                  (selectedMods.mask === "blaze-amplifier"
+                                    ? 0.15
+                                    : 0.12) *
+                                  (1 +
+                                    ((parseFloat(elementalDamage) || 0) +
+                                      deviantEnergyBonus) /
+                                      100) *
+                                  (1 + (parseFloat(statusDamage) || 0) / 100)
+                                ).toFixed(2)}{" "}
+                                × (1 + {parseFloat(burnDamageBonus) || 0}/100) ={" "}
+                                {(
+                                  (parseFloat(psiIntensity) || 0) *
+                                  (selectedMods.mask === "blaze-amplifier"
+                                    ? 0.15
+                                    : 0.12) *
+                                  (1 +
+                                    ((parseFloat(elementalDamage) || 0) +
+                                      deviantEnergyBonus) /
+                                      100) *
+                                  (1 + (parseFloat(statusDamage) || 0) / 100) *
+                                  (1 + (parseFloat(burnDamageBonus) || 0) / 100)
+                                ).toFixed(2)}
+                              </div>
+                              <div>
+                                <span className='text-gray-300'>Step 10:</span>{" "}
+                                Enemy Multiplier ={" "}
+                                {parseFloat(enemyDamageMultiplier) || 0}%
+                                {keyArmor === "shoes" &&
+                                  selectedArmor.shoes === "earthly-boots" && (
+                                    <span className='text-green-400'>
+                                      {" "}
+                                      + 30% (Earthly Boots)
+                                    </span>
+                                  )}
+                              </div>
+                              <div>
+                                <span className='text-gray-300'>Step 11:</span>{" "}
+                                After Enemy ={" "}
+                                {(
+                                  (parseFloat(psiIntensity) || 0) *
+                                  (selectedMods.mask === "blaze-amplifier"
+                                    ? 0.15
+                                    : 0.12) *
+                                  (1 +
+                                    ((parseFloat(elementalDamage) || 0) +
+                                      deviantEnergyBonus) /
+                                      100) *
+                                  (1 + (parseFloat(statusDamage) || 0) / 100) *
+                                  (1 + (parseFloat(burnDamageBonus) || 0) / 100)
+                                ).toFixed(2)}{" "}
+                                × (1 +{" "}
+                                {(parseFloat(enemyDamageMultiplier) || 0) +
+                                  (keyArmor === "shoes" &&
+                                  selectedArmor.shoes === "earthly-boots"
+                                    ? 30
+                                    : 0)}
+                                /100) ={" "}
+                                {(
+                                  (parseFloat(psiIntensity) || 0) *
+                                  (selectedMods.mask === "blaze-amplifier"
+                                    ? 0.15
+                                    : 0.12) *
+                                  (1 +
+                                    ((parseFloat(elementalDamage) || 0) +
+                                      deviantEnergyBonus) /
+                                      100) *
+                                  (1 + (parseFloat(statusDamage) || 0) / 100) *
+                                  (1 +
+                                    (parseFloat(burnDamageBonus) || 0) / 100) *
+                                  (1 +
+                                    ((parseFloat(enemyDamageMultiplier) || 0) +
+                                      (keyArmor === "shoes" &&
+                                      selectedArmor.shoes === "earthly-boots"
+                                        ? 30
+                                        : 0)) /
+                                      100)
+                                ).toFixed(2)}
+                              </div>
+                              {(parseFloat(vulnerability) || 0) > 0 && (
+                                <>
+                                  <div>
+                                    <span className='text-blue-400'>
+                                      Step 12:
+                                    </span>{" "}
+                                    Vulnerability ={" "}
+                                    {parseFloat(vulnerability) || 0}%
+                                    {usingVulnAmp && " + 8% (Vuln Amp)"}
+                                  </div>
+                                  <div>
+                                    <span className='text-blue-400'>
+                                      Step 13:
+                                    </span>{" "}
+                                    Final Base ={" "}
+                                    {(
+                                      (parseFloat(psiIntensity) || 0) *
+                                      (selectedMods.mask === "blaze-amplifier"
+                                        ? 0.15
+                                        : 0.12) *
+                                      (1 +
+                                        ((parseFloat(elementalDamage) || 0) +
+                                          deviantEnergyBonus) /
+                                          100) *
+                                      (1 +
+                                        (parseFloat(statusDamage) || 0) / 100) *
+                                      (1 +
+                                        (parseFloat(burnDamageBonus) || 0) /
+                                          100) *
+                                      (1 +
+                                        ((parseFloat(enemyDamageMultiplier) ||
+                                          0) +
+                                          (keyArmor === "shoes" &&
+                                          selectedArmor.shoes ===
+                                            "earthly-boots"
+                                            ? 30
+                                            : 0)) /
+                                          100)
+                                    ).toFixed(2)}{" "}
+                                    × (1 +{" "}
+                                    {(parseFloat(vulnerability) || 0) +
+                                      (usingVulnAmp ? 8 : 0)}
+                                    /100) ={" "}
+                                    {(
+                                      (parseFloat(psiIntensity) || 0) *
+                                      (selectedMods.mask === "blaze-amplifier"
+                                        ? 0.15
+                                        : 0.12) *
+                                      (1 +
+                                        ((parseFloat(elementalDamage) || 0) +
+                                          deviantEnergyBonus) /
+                                          100) *
+                                      (1 +
+                                        (parseFloat(statusDamage) || 0) / 100) *
+                                      (1 +
+                                        (parseFloat(burnDamageBonus) || 0) /
+                                          100) *
+                                      (1 +
+                                        ((parseFloat(enemyDamageMultiplier) ||
+                                          0) +
+                                          (keyArmor === "shoes" &&
+                                          selectedArmor.shoes ===
+                                            "earthly-boots"
+                                            ? 30
+                                            : 0)) /
+                                          100) *
+                                      (1 +
+                                        ((parseFloat(vulnerability) || 0) +
+                                          (usingVulnAmp ? 8 : 0)) /
+                                          100)
+                                    ).toFixed(2)}
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Column 2: Tick Damage */}
                         <div className='bg-gray-800/50 rounded-lg p-4 border border-gray-600'>
                           <div className='text-sm font-medium text-gray-400 mb-3'>
-                            BASE DAMAGE CALCULATION
+                            TICK DAMAGE CALCULATION
                           </div>
                           <div className='space-y-2 text-xs text-gray-400 font-mono leading-relaxed'>
                             <div>
-                              <span className='text-gray-300'>Step 1:</span> Psi
-                              Intensity = {parseFloat(psiIntensity) || 0}
-                            </div>
-                            <div>
-                              <span className='text-gray-300'>Step 2:</span>{" "}
-                              Burn Factor ={" "}
-                              {selectedMods.mask === "blaze-amplifier"
-                                ? "0.15"
-                                : "0.12"}
-                              {selectedMods.mask === "blaze-amplifier" &&
-                                " (Blaze Amplifier)"}
-                            </div>
-                            <div>
-                              <span className='text-gray-300'>Step 3:</span>{" "}
-                              Base Damage = {parseFloat(psiIntensity) || 0} ×{" "}
-                              {selectedMods.mask === "blaze-amplifier"
-                                ? "0.15"
-                                : "0.12"}{" "}
-                              ={" "}
-                              {(
-                                (parseFloat(psiIntensity) || 0) *
-                                (selectedMods.mask === "blaze-amplifier"
-                                  ? 0.15
-                                  : 0.12)
-                              ).toFixed(2)}
-                            </div>
-                            <div>
-                              <span className='text-gray-300'>Step 4:</span>{" "}
-                              Elemental Damage ={" "}
-                              {parseFloat(elementalDamage) || 0}%
-                              {deviantEnergyBonus > 0 &&
-                                ` + ${deviantEnergyBonus}% (Deviant Energy)`}
-                            </div>
-                            <div>
-                              <span className='text-gray-300'>Step 5:</span>{" "}
-                              After Elemental ={" "}
-                              {(
-                                (parseFloat(psiIntensity) || 0) *
-                                (selectedMods.mask === "blaze-amplifier"
-                                  ? 0.15
-                                  : 0.12)
-                              ).toFixed(2)}{" "}
-                              × (1 +{" "}
-                              {(parseFloat(elementalDamage) || 0) +
-                                deviantEnergyBonus}
-                              /100) ={" "}
-                              {(
-                                (parseFloat(psiIntensity) || 0) *
-                                (selectedMods.mask === "blaze-amplifier"
-                                  ? 0.15
-                                  : 0.12) *
-                                (1 +
-                                  ((parseFloat(elementalDamage) || 0) +
-                                    deviantEnergyBonus) /
-                                    100)
-                              ).toFixed(2)}
-                            </div>
-                            <div>
-                              <span className='text-gray-300'>Step 6:</span>{" "}
-                              Status Damage = {parseFloat(statusDamage) || 0}%
-                            </div>
-                            <div>
-                              <span className='text-gray-300'>Step 7:</span>{" "}
-                              After Status ={" "}
-                              {(
-                                (parseFloat(psiIntensity) || 0) *
-                                (selectedMods.mask === "blaze-amplifier"
-                                  ? 0.15
-                                  : 0.12) *
-                                (1 +
-                                  ((parseFloat(elementalDamage) || 0) +
-                                    deviantEnergyBonus) /
-                                    100)
-                              ).toFixed(2)}{" "}
-                              × (1 + {parseFloat(statusDamage) || 0}/100) ={" "}
-                              {(
-                                (parseFloat(psiIntensity) || 0) *
-                                (selectedMods.mask === "blaze-amplifier"
-                                  ? 0.15
-                                  : 0.12) *
-                                (1 +
-                                  ((parseFloat(elementalDamage) || 0) +
-                                    deviantEnergyBonus) /
-                                    100) *
-                                (1 + (parseFloat(statusDamage) || 0) / 100)
-                              ).toFixed(2)}
-                            </div>
-                            <div>
-                              <span className='text-gray-300'>Step 8:</span>{" "}
-                              Burn Damage Bonus ={" "}
-                              {parseFloat(burnDamageBonus) || 0}%
-                            </div>
-                            <div>
-                              <span className='text-gray-300'>Step 9:</span>{" "}
-                              After Burn Bonus ={" "}
-                              {(
-                                (parseFloat(psiIntensity) || 0) *
-                                (selectedMods.mask === "blaze-amplifier"
-                                  ? 0.15
-                                  : 0.12) *
-                                (1 +
-                                  ((parseFloat(elementalDamage) || 0) +
-                                    deviantEnergyBonus) /
-                                    100) *
-                                (1 + (parseFloat(statusDamage) || 0) / 100)
-                              ).toFixed(2)}{" "}
-                              × (1 + {parseFloat(burnDamageBonus) || 0}/100) ={" "}
-                              {(
-                                (parseFloat(psiIntensity) || 0) *
-                                (selectedMods.mask === "blaze-amplifier"
-                                  ? 0.15
-                                  : 0.12) *
-                                (1 +
-                                  ((parseFloat(elementalDamage) || 0) +
-                                    deviantEnergyBonus) /
-                                    100) *
-                                (1 + (parseFloat(statusDamage) || 0) / 100) *
-                                (1 + (parseFloat(burnDamageBonus) || 0) / 100)
-                              ).toFixed(2)}
-                            </div>
-                            <div>
-                              <span className='text-gray-300'>Step 10:</span>{" "}
-                              Enemy Multiplier ={" "}
-                              {parseFloat(enemyDamageMultiplier) || 0}%
-                              {keyArmor === "shoes" &&
-                                selectedArmor.shoes === "earthly-boots" && (
-                                  <span className='text-green-400'>
-                                    {" "}
-                                    + 30% (Earthly Boots)
-                                  </span>
-                                )}
-                            </div>
-                            <div>
-                              <span className='text-gray-300'>Step 11:</span>{" "}
-                              After Enemy ={" "}
-                              {(
-                                (parseFloat(psiIntensity) || 0) *
-                                (selectedMods.mask === "blaze-amplifier"
-                                  ? 0.15
-                                  : 0.12) *
-                                (1 +
-                                  ((parseFloat(elementalDamage) || 0) +
-                                    deviantEnergyBonus) /
-                                    100) *
-                                (1 + (parseFloat(statusDamage) || 0) / 100) *
-                                (1 + (parseFloat(burnDamageBonus) || 0) / 100)
-                              ).toFixed(2)}{" "}
-                              × (1 +{" "}
-                              {(parseFloat(enemyDamageMultiplier) || 0) +
-                                (keyArmor === "shoes" &&
-                                selectedArmor.shoes === "earthly-boots"
-                                  ? 30
-                                  : 0)}
-                              /100) ={" "}
-                              {(
-                                (parseFloat(psiIntensity) || 0) *
-                                (selectedMods.mask === "blaze-amplifier"
-                                  ? 0.15
-                                  : 0.12) *
-                                (1 +
-                                  ((parseFloat(elementalDamage) || 0) +
-                                    deviantEnergyBonus) /
-                                    100) *
-                                (1 + (parseFloat(statusDamage) || 0) / 100) *
-                                (1 + (parseFloat(burnDamageBonus) || 0) / 100) *
-                                (1 +
-                                  ((parseFloat(enemyDamageMultiplier) || 0) +
-                                    (keyArmor === "shoes" &&
-                                    selectedArmor.shoes === "earthly-boots"
-                                      ? 30
-                                      : 0)) /
-                                    100)
-                              ).toFixed(2)}
-                            </div>
-                            {(parseFloat(vulnerability) || 0) > 0 && (
-                              <>
-                                <div>
-                                  <span className='text-blue-400'>
-                                    Step 12:
-                                  </span>{" "}
-                                  Vulnerability ={" "}
-                                  {parseFloat(vulnerability) || 0}%
-                                  {usingVulnAmp && " + 8% (Vuln Amp)"}
-                                </div>
-                                <div>
-                                  <span className='text-blue-400'>
-                                    Step 13:
-                                  </span>{" "}
-                                  Final Base ={" "}
-                                  {(
-                                    (parseFloat(psiIntensity) || 0) *
-                                    (selectedMods.mask === "blaze-amplifier"
-                                      ? 0.15
-                                      : 0.12) *
-                                    (1 +
-                                      ((parseFloat(elementalDamage) || 0) +
-                                        deviantEnergyBonus) /
-                                        100) *
-                                    (1 +
-                                      (parseFloat(statusDamage) || 0) / 100) *
-                                    (1 +
-                                      (parseFloat(burnDamageBonus) || 0) /
-                                        100) *
-                                    (1 +
-                                      ((parseFloat(enemyDamageMultiplier) ||
-                                        0) +
-                                        (keyArmor === "shoes" &&
-                                        selectedArmor.shoes === "earthly-boots"
-                                          ? 30
-                                          : 0)) /
-                                        100)
-                                  ).toFixed(2)}{" "}
-                                  × (1 +{" "}
-                                  {(parseFloat(vulnerability) || 0) +
-                                    (usingVulnAmp ? 8 : 0)}
-                                  /100) ={" "}
-                                  {(
+                              <span className='text-gray-300'>
+                                Base per tick:
+                              </span>{" "}
+                              {isFrostWeapon
+                                ? // Frost calculation
+                                  (() => {
+                                    const base =
+                                      (parseFloat(psiIntensity) || 0) *
+                                      0.5 *
+                                      (1 +
+                                        ((parseFloat(elementalDamage) || 0) +
+                                          deviantEnergyBonus) /
+                                          100) *
+                                      (1 +
+                                        (parseFloat(statusDamage) || 0) / 100) *
+                                      (1 +
+                                        (parseFloat(frostDamageBonus) || 0) /
+                                          100) *
+                                      (1 +
+                                        ((parseFloat(enemyDamageMultiplier) ||
+                                          0) +
+                                          (keyArmor === "shoes" &&
+                                          selectedArmor.shoes ===
+                                            "earthly-boots"
+                                            ? 30
+                                            : 0)) /
+                                          100) *
+                                      (1 +
+                                        ((parseFloat(vulnerability) || 0) +
+                                          (usingVulnAmp ? 8 : 0)) /
+                                          100)
+
+                                    // Apply Frostwave Wither if equipped (starts at +30%, decreases over time)
+                                    const withFrostwave =
+                                      selectedMods.mask === "frostwave-wither"
+                                        ? base * 1.3
+                                        : base
+
+                                    return withFrostwave.toFixed(2)
+                                  })()
+                                : // Burn calculation
+                                  (
                                     (parseFloat(psiIntensity) || 0) *
                                     (selectedMods.mask === "blaze-amplifier"
                                       ? 0.15
@@ -1189,456 +1635,327 @@ export default function WeaponDetailPage() {
                                         (usingVulnAmp ? 8 : 0)) /
                                         100)
                                   ).toFixed(2)}
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Column 2: Tick Damage */}
-                        <div className='bg-gray-800/50 rounded-lg p-4 border border-gray-600'>
-                          <div className='text-sm font-medium text-gray-400 mb-3'>
-                            TICK DAMAGE CALCULATION
-                          </div>
-                          <div className='space-y-2 text-xs text-gray-400 font-mono leading-relaxed'>
-                            <div>
-                              <span className='text-gray-300'>
-                                Base per tick:
-                              </span>{" "}
-                              {(
-                                (parseFloat(psiIntensity) || 0) *
-                                (selectedMods.mask === "blaze-amplifier"
-                                  ? 0.15
-                                  : 0.12) *
-                                (1 +
-                                  ((parseFloat(elementalDamage) || 0) +
-                                    deviantEnergyBonus) /
-                                    100) *
-                                (1 + (parseFloat(statusDamage) || 0) / 100) *
-                                (1 + (parseFloat(burnDamageBonus) || 0) / 100) *
-                                (1 +
-                                  ((parseFloat(enemyDamageMultiplier) || 0) +
-                                    (keyArmor === "shoes" &&
-                                    selectedArmor.shoes === "earthly-boots"
-                                      ? 30
-                                      : 0)) /
-                                    100) *
-                                (1 +
-                                  ((parseFloat(vulnerability) || 0) +
-                                    (usingVulnAmp ? 8 : 0)) /
-                                    100)
-                              ).toFixed(2)}
                             </div>
                             <div className='text-gray-300 font-semibold mt-3 mb-2'>
                               Tick Calculation Method:
                             </div>
                             <div className='text-gray-500 mb-3'>
-                              Each tick multiplies base damage by stack count,
-                              then rounds:
-                              <br />• Tick 1: base × 1 → rounded
-                              <br />• Tick 2: base × 2 → rounded
-                              <br />• Tick 3: base × 3 → rounded
-                              <br />• etc.
+                              {isFrostWeapon &&
+                              weapon?.id === "kam-abyss-glance" ? (
+                                <>
+                                  KAM - Abyss Glance: Each tick gains +5%
+                                  stacking bonus (max +50% at tick 10):
+                                  <br />• Tick 1: base × 1.00 (0% bonus)
+                                  <br />• Tick 2: base × 1.05 (5% bonus)
+                                  <br />• Tick 3: base × 1.10 (10% bonus)
+                                  <br />• ...
+                                  <br />• Tick 11+: base × 1.50 (50% bonus -
+                                  max)
+                                </>
+                              ) : (
+                                <>
+                                  Each tick multiplies base damage by stack
+                                  count, then rounds:
+                                  <br />• Tick 1: base × 1 → rounded
+                                  <br />• Tick 2: base × 2 → rounded
+                                  <br />• Tick 3: base × 3 → rounded
+                                  <br />• etc.
+                                </>
+                              )}
                             </div>
+
+                            {/* Cryo Blast Explanation */}
+                            {isFrostWeapon &&
+                              weapon?.id === "kam-abyss-glance" &&
+                              selectedMods.weapon === "cryo-blast" && (
+                                <div className='bg-blue-900/20 rounded-lg p-3 border border-blue-500/30 mt-3 mb-3'>
+                                  <div className='text-blue-300 font-semibold mb-2 text-xs'>
+                                    Cryo Blast Mod Effect:
+                                  </div>
+                                  <div className='text-gray-400 text-xs'>
+                                    Each tick gains +4% Cryo Blast bonus (max
+                                    +20% at tick 5):
+                                    <br />• Tick 1: weapon bonus (1.00) × cryo
+                                    bonus (1.00) = 1.00
+                                    <br />• Tick 2: weapon bonus (1.05) × cryo
+                                    bonus (1.04) = 1.092
+                                    <br />• Tick 3: weapon bonus (1.10) × cryo
+                                    bonus (1.08) = 1.188
+                                    <br />• Tick 4: weapon bonus (1.15) × cryo
+                                    bonus (1.12) = 1.288
+                                    <br />• Tick 5: weapon bonus (1.20) × cryo
+                                    bonus (1.16) = 1.392
+                                    <br />• Tick 6+: weapon bonus (1.25+) × cryo
+                                    bonus (1.20) = max
+                                  </div>
+                                </div>
+                              )}
+
                             <div className='text-gray-300 font-semibold mb-2'>
                               Tick Results:
                             </div>
                             <div>
                               <span className='text-gray-300'>Tick 1:</span>{" "}
-                              {(
-                                (parseFloat(psiIntensity) || 0) *
-                                (selectedMods.mask === "blaze-amplifier"
-                                  ? 0.15
-                                  : 0.12) *
-                                (1 +
-                                  ((parseFloat(elementalDamage) || 0) +
-                                    deviantEnergyBonus) /
-                                    100) *
-                                (1 + (parseFloat(statusDamage) || 0) / 100) *
-                                (1 + (parseFloat(burnDamageBonus) || 0) / 100) *
-                                (1 +
-                                  ((parseFloat(enemyDamageMultiplier) || 0) +
-                                    (keyArmor === "shoes" &&
-                                    selectedArmor.shoes === "earthly-boots"
-                                      ? 30
-                                      : 0)) /
-                                    100) *
-                                (1 +
-                                  ((parseFloat(vulnerability) || 0) +
-                                    (usingVulnAmp ? 8 : 0)) /
-                                    100) *
-                                1
-                              ).toFixed(0)}{" "}
-                              (1 stack)
+                              {burnResults.tick1} (1 stack)
                             </div>
                             <div>
                               <span className='text-gray-300'>Tick 2:</span>{" "}
-                              {(
-                                (parseFloat(psiIntensity) || 0) *
-                                (selectedMods.mask === "blaze-amplifier"
-                                  ? 0.15
-                                  : 0.12) *
-                                (1 +
-                                  ((parseFloat(elementalDamage) || 0) +
-                                    deviantEnergyBonus) /
-                                    100) *
-                                (1 + (parseFloat(statusDamage) || 0) / 100) *
-                                (1 + (parseFloat(burnDamageBonus) || 0) / 100) *
-                                (1 +
-                                  ((parseFloat(enemyDamageMultiplier) || 0) +
-                                    (keyArmor === "shoes" &&
-                                    selectedArmor.shoes === "earthly-boots"
-                                      ? 30
-                                      : 0)) /
-                                    100) *
-                                (1 +
-                                  ((parseFloat(vulnerability) || 0) +
-                                    (usingVulnAmp ? 8 : 0)) /
-                                    100) *
-                                2
-                              ).toFixed(0)}{" "}
-                              (2 stacks)
+                              {burnResults.tick2} (2 stacks)
                             </div>
                             <div>
                               <span className='text-gray-300'>Tick 3:</span>{" "}
-                              {(
-                                (parseFloat(psiIntensity) || 0) *
-                                (selectedMods.mask === "blaze-amplifier"
-                                  ? 0.15
-                                  : 0.12) *
-                                (1 +
-                                  ((parseFloat(elementalDamage) || 0) +
-                                    deviantEnergyBonus) /
-                                    100) *
-                                (1 + (parseFloat(statusDamage) || 0) / 100) *
-                                (1 + (parseFloat(burnDamageBonus) || 0) / 100) *
-                                (1 +
-                                  ((parseFloat(enemyDamageMultiplier) || 0) +
-                                    (keyArmor === "shoes" &&
-                                    selectedArmor.shoes === "earthly-boots"
-                                      ? 30
-                                      : 0)) /
-                                    100) *
-                                (1 +
-                                  ((parseFloat(vulnerability) || 0) +
-                                    (usingVulnAmp ? 8 : 0)) /
-                                    100) *
-                                3
-                              ).toFixed(0)}{" "}
-                              (3 stacks)
+                              {burnResults.tick3} (3 stacks)
                             </div>
                             <div>
                               <span className='text-gray-300'>Tick 4:</span>{" "}
-                              {(
-                                (parseFloat(psiIntensity) || 0) *
-                                (selectedMods.mask === "blaze-amplifier"
-                                  ? 0.15
-                                  : 0.12) *
-                                (1 +
-                                  ((parseFloat(elementalDamage) || 0) +
-                                    deviantEnergyBonus) /
-                                    100) *
-                                (1 + (parseFloat(statusDamage) || 0) / 100) *
-                                (1 + (parseFloat(burnDamageBonus) || 0) / 100) *
-                                (1 +
-                                  ((parseFloat(enemyDamageMultiplier) || 0) +
-                                    (keyArmor === "shoes" &&
-                                    selectedArmor.shoes === "earthly-boots"
-                                      ? 30
-                                      : 0)) /
-                                    100) *
-                                (1 +
-                                  ((parseFloat(vulnerability) || 0) +
-                                    (usingVulnAmp ? 8 : 0)) /
-                                    100) *
-                                4
-                              ).toFixed(0)}{" "}
-                              (4 stacks)
+                              {burnResults.tick4} (4 stacks)
                             </div>
                             <div>
                               <span className='text-gray-300'>Tick 5:</span>{" "}
-                              {(
-                                (parseFloat(psiIntensity) || 0) *
-                                (selectedMods.mask === "blaze-amplifier"
-                                  ? 0.15
-                                  : 0.12) *
-                                (1 +
-                                  ((parseFloat(elementalDamage) || 0) +
-                                    deviantEnergyBonus) /
-                                    100) *
-                                (1 + (parseFloat(statusDamage) || 0) / 100) *
-                                (1 + (parseFloat(burnDamageBonus) || 0) / 100) *
-                                (1 +
-                                  ((parseFloat(enemyDamageMultiplier) || 0) +
-                                    (keyArmor === "shoes" &&
-                                    selectedArmor.shoes === "earthly-boots"
-                                      ? 30
-                                      : 0)) /
-                                    100) *
-                                (1 +
-                                  ((parseFloat(vulnerability) || 0) +
-                                    (usingVulnAmp ? 8 : 0)) /
-                                    100) *
-                                5
-                              ).toFixed(0)}{" "}
-                              (5 stacks)
+                              {burnResults.tick5} (5 stacks)
                             </div>
                             <div>
                               <span className='text-gray-300'>Tick 6:</span>{" "}
-                              {(
-                                (parseFloat(psiIntensity) || 0) *
-                                (selectedMods.mask === "blaze-amplifier"
-                                  ? 0.15
-                                  : 0.12) *
-                                (1 +
-                                  ((parseFloat(elementalDamage) || 0) +
-                                    deviantEnergyBonus) /
-                                    100) *
-                                (1 + (parseFloat(statusDamage) || 0) / 100) *
-                                (1 + (parseFloat(burnDamageBonus) || 0) / 100) *
-                                (1 +
-                                  ((parseFloat(enemyDamageMultiplier) || 0) +
-                                    (keyArmor === "shoes" &&
-                                    selectedArmor.shoes === "earthly-boots"
-                                      ? 30
-                                      : 0)) /
-                                    100) *
-                                (1 +
-                                  ((parseFloat(vulnerability) || 0) +
-                                    (usingVulnAmp ? 8 : 0)) /
-                                    100) *
-                                6
-                              ).toFixed(0)}{" "}
-                              (6 stacks)
+                              {burnResults.tick6} (6 stacks)
                             </div>
                             <div>
                               <span className='text-gray-300'>Tick 7:</span>{" "}
-                              {(
-                                (parseFloat(psiIntensity) || 0) *
-                                (selectedMods.mask === "blaze-amplifier"
-                                  ? 0.15
-                                  : 0.12) *
-                                (1 +
-                                  ((parseFloat(elementalDamage) || 0) +
-                                    deviantEnergyBonus) /
-                                    100) *
-                                (1 + (parseFloat(statusDamage) || 0) / 100) *
-                                (1 + (parseFloat(burnDamageBonus) || 0) / 100) *
-                                (1 +
-                                  ((parseFloat(enemyDamageMultiplier) || 0) +
-                                    (keyArmor === "shoes" &&
-                                    selectedArmor.shoes === "earthly-boots"
-                                      ? 30
-                                      : 0)) /
-                                    100) *
-                                (1 +
-                                  ((parseFloat(vulnerability) || 0) +
-                                    (usingVulnAmp ? 8 : 0)) /
-                                    100) *
-                                7
-                              ).toFixed(0)}{" "}
-                              (7 stacks)
+                              {burnResults.tick7} (7 stacks)
                             </div>
+                            {isFrostWeapon &&
+                              weapon?.id === "kam-abyss-glance" && (
+                                <>
+                                  <div>
+                                    <span className='text-gray-300'>
+                                      Tick 8:
+                                    </span>{" "}
+                                    {burnResults.tick8} (8 stacks)
+                                  </div>
+                                  <div>
+                                    <span className='text-gray-300'>
+                                      Tick 9:
+                                    </span>{" "}
+                                    {burnResults.tick9} (9 stacks)
+                                  </div>
+                                  <div>
+                                    <span className='text-gray-300'>
+                                      Tick 10:
+                                    </span>{" "}
+                                    {burnResults.tick10} (10 stacks)
+                                  </div>
+                                  <div>
+                                    <span className='text-gray-300'>
+                                      Tick 11:
+                                    </span>{" "}
+                                    {burnResults.tick11} (max stacking - damage
+                                    stays at this)
+                                  </div>
+                                </>
+                              )}
                           </div>
                         </div>
 
-                        {/* Column 3: Explosion Damage */}
-                        <div className='bg-gray-800/50 rounded-lg p-4 border border-gray-600'>
-                          <div className='text-sm font-medium text-gray-400 mb-3'>
-                            EXPLOSION DAMAGE CALCULATION
+                        {/* Column 3: Explosion Damage (Burn only) */}
+                        {isBurnWeapon && (
+                          <div className='bg-gray-800/50 rounded-lg p-4 border border-gray-600'>
+                            <div className='text-sm font-medium text-gray-400 mb-3'>
+                              EXPLOSION DAMAGE CALCULATION
+                            </div>
+                            <div className='space-y-2 text-xs text-gray-400 font-mono leading-relaxed'>
+                              <div>
+                                <span className='text-gray-300'>Step 1:</span>{" "}
+                                Psi Intensity = {parseFloat(psiIntensity) || 0}
+                              </div>
+                              <div>
+                                <span className='text-gray-300'>Step 2:</span>{" "}
+                                Elemental Damage ={" "}
+                                {parseFloat(elementalDamage) || 0}%
+                                {deviantEnergyBonus > 0 &&
+                                  ` + ${deviantEnergyBonus}% (Deviant Energy)`}
+                              </div>
+                              <div>
+                                <span className='text-gray-300'>Step 3:</span>{" "}
+                                After Elemental ={" "}
+                                {parseFloat(psiIntensity) || 0} × (1 +{" "}
+                                {(parseFloat(elementalDamage) || 0) +
+                                  deviantEnergyBonus}
+                                /100) ={" "}
+                                {(
+                                  (parseFloat(psiIntensity) || 0) *
+                                  (1 +
+                                    ((parseFloat(elementalDamage) || 0) +
+                                      deviantEnergyBonus) /
+                                      100)
+                                ).toFixed(3)}
+                              </div>
+                              <div>
+                                <span className='text-gray-300'>Step 4:</span>{" "}
+                                Status Damage = {parseFloat(statusDamage) || 0}%
+                              </div>
+                              <div>
+                                <span className='text-gray-300'>Step 5:</span>{" "}
+                                After Status ={" "}
+                                {(
+                                  (parseFloat(psiIntensity) || 0) *
+                                  (1 +
+                                    ((parseFloat(elementalDamage) || 0) +
+                                      deviantEnergyBonus) /
+                                      100)
+                                ).toFixed(3)}{" "}
+                                × (1 + {parseFloat(statusDamage) || 0}/100) ={" "}
+                                {(
+                                  (parseFloat(psiIntensity) || 0) *
+                                  (1 +
+                                    ((parseFloat(elementalDamage) || 0) +
+                                      deviantEnergyBonus) /
+                                      100) *
+                                  (1 + (parseFloat(statusDamage) || 0) / 100)
+                                ).toFixed(3)}
+                              </div>
+                              <div>
+                                <span className='text-gray-300'>Step 6:</span>{" "}
+                                Special Ability Bonus = 200% (KVD Boom Boom)
+                              </div>
+                              <div>
+                                <span className='text-gray-300'>Step 7:</span>{" "}
+                                After Special ={" "}
+                                {(
+                                  (parseFloat(psiIntensity) || 0) *
+                                  (1 +
+                                    ((parseFloat(elementalDamage) || 0) +
+                                      deviantEnergyBonus) /
+                                      100) *
+                                  (1 + (parseFloat(statusDamage) || 0) / 100)
+                                ).toFixed(3)}{" "}
+                                × 3 ={" "}
+                                {(
+                                  (parseFloat(psiIntensity) || 0) *
+                                  (1 +
+                                    ((parseFloat(elementalDamage) || 0) +
+                                      deviantEnergyBonus) /
+                                      100) *
+                                  (1 + (parseFloat(statusDamage) || 0) / 100) *
+                                  3
+                                ).toFixed(3)}
+                              </div>
+                              <div>
+                                <span className='text-gray-300'>Step 8:</span>{" "}
+                                Enemy Multiplier ={" "}
+                                {parseFloat(enemyDamageMultiplier) || 0}%
+                                {keyArmor === "shoes" &&
+                                  selectedArmor.shoes === "earthly-boots" && (
+                                    <span className='text-green-400'>
+                                      {" "}
+                                      + 30% (Earthly Boots)
+                                    </span>
+                                  )}
+                              </div>
+                              <div>
+                                <span className='text-gray-300'>Step 9:</span>{" "}
+                                After Enemy ={" "}
+                                {(
+                                  (parseFloat(psiIntensity) || 0) *
+                                  (1 +
+                                    ((parseFloat(elementalDamage) || 0) +
+                                      deviantEnergyBonus) /
+                                      100) *
+                                  (1 + (parseFloat(statusDamage) || 0) / 100) *
+                                  3
+                                ).toFixed(3)}{" "}
+                                × (1 +{" "}
+                                {(parseFloat(enemyDamageMultiplier) || 0) +
+                                  (keyArmor === "shoes" &&
+                                  selectedArmor.shoes === "earthly-boots"
+                                    ? 30
+                                    : 0)}
+                                /100) ={" "}
+                                {(
+                                  (parseFloat(psiIntensity) || 0) *
+                                  (1 +
+                                    ((parseFloat(elementalDamage) || 0) +
+                                      deviantEnergyBonus) /
+                                      100) *
+                                  (1 + (parseFloat(statusDamage) || 0) / 100) *
+                                  3 *
+                                  (1 +
+                                    ((parseFloat(enemyDamageMultiplier) || 0) +
+                                      (keyArmor === "shoes" &&
+                                      selectedArmor.shoes === "earthly-boots"
+                                        ? 30
+                                        : 0)) /
+                                      100)
+                                ).toFixed(3)}
+                              </div>
+                              {(parseFloat(vulnerability) || 0) > 0 && (
+                                <>
+                                  <div>
+                                    <span className='text-blue-400'>
+                                      Step 10:
+                                    </span>{" "}
+                                    Vulnerability ={" "}
+                                    {parseFloat(vulnerability) || 0}%
+                                    {usingVulnAmp && " + 8% (Vuln Amp)"}
+                                  </div>
+                                  <div>
+                                    <span className='text-blue-400'>
+                                      Step 11:
+                                    </span>{" "}
+                                    Final Explosion ={" "}
+                                    {(
+                                      (parseFloat(psiIntensity) || 0) *
+                                      (1 +
+                                        ((parseFloat(elementalDamage) || 0) +
+                                          deviantEnergyBonus) /
+                                          100) *
+                                      (1 +
+                                        (parseFloat(statusDamage) || 0) / 100) *
+                                      3 *
+                                      (1 +
+                                        ((parseFloat(enemyDamageMultiplier) ||
+                                          0) +
+                                          (keyArmor === "shoes" &&
+                                          selectedArmor.shoes ===
+                                            "earthly-boots"
+                                            ? 30
+                                            : 0)) /
+                                          100)
+                                    ).toFixed(3)}{" "}
+                                    × (1 +{" "}
+                                    {(parseFloat(vulnerability) || 0) +
+                                      (usingVulnAmp ? 8 : 0)}
+                                    /100) ={" "}
+                                    {(
+                                      (parseFloat(psiIntensity) || 0) *
+                                      (1 +
+                                        ((parseFloat(elementalDamage) || 0) +
+                                          deviantEnergyBonus) /
+                                          100) *
+                                      (1 +
+                                        (parseFloat(statusDamage) || 0) / 100) *
+                                      3 *
+                                      (1 +
+                                        ((parseFloat(enemyDamageMultiplier) ||
+                                          0) +
+                                          (keyArmor === "shoes" &&
+                                          selectedArmor.shoes ===
+                                            "earthly-boots"
+                                            ? 30
+                                            : 0)) /
+                                          100) *
+                                      (1 +
+                                        ((parseFloat(vulnerability) || 0) +
+                                          (usingVulnAmp ? 8 : 0)) /
+                                          100)
+                                    ).toFixed(3)}
+                                  </div>
+                                </>
+                              )}
+                              <div className='text-orange-400 font-semibold mt-3'>
+                                → Final Explosion: {burnResults.explosion}
+                              </div>
+                            </div>
                           </div>
-                          <div className='space-y-2 text-xs text-gray-400 font-mono leading-relaxed'>
-                            <div>
-                              <span className='text-gray-300'>Step 1:</span> Psi
-                              Intensity = {parseFloat(psiIntensity) || 0}
-                            </div>
-                            <div>
-                              <span className='text-gray-300'>Step 2:</span>{" "}
-                              Elemental Damage ={" "}
-                              {parseFloat(elementalDamage) || 0}%
-                              {deviantEnergyBonus > 0 &&
-                                ` + ${deviantEnergyBonus}% (Deviant Energy)`}
-                            </div>
-                            <div>
-                              <span className='text-gray-300'>Step 3:</span>{" "}
-                              After Elemental = {parseFloat(psiIntensity) || 0}{" "}
-                              × (1 +{" "}
-                              {(parseFloat(elementalDamage) || 0) +
-                                deviantEnergyBonus}
-                              /100) ={" "}
-                              {(
-                                (parseFloat(psiIntensity) || 0) *
-                                (1 +
-                                  ((parseFloat(elementalDamage) || 0) +
-                                    deviantEnergyBonus) /
-                                    100)
-                              ).toFixed(3)}
-                            </div>
-                            <div>
-                              <span className='text-gray-300'>Step 4:</span>{" "}
-                              Status Damage = {parseFloat(statusDamage) || 0}%
-                            </div>
-                            <div>
-                              <span className='text-gray-300'>Step 5:</span>{" "}
-                              After Status ={" "}
-                              {(
-                                (parseFloat(psiIntensity) || 0) *
-                                (1 +
-                                  ((parseFloat(elementalDamage) || 0) +
-                                    deviantEnergyBonus) /
-                                    100)
-                              ).toFixed(3)}{" "}
-                              × (1 + {parseFloat(statusDamage) || 0}/100) ={" "}
-                              {(
-                                (parseFloat(psiIntensity) || 0) *
-                                (1 +
-                                  ((parseFloat(elementalDamage) || 0) +
-                                    deviantEnergyBonus) /
-                                    100) *
-                                (1 + (parseFloat(statusDamage) || 0) / 100)
-                              ).toFixed(3)}
-                            </div>
-                            <div>
-                              <span className='text-gray-300'>Step 6:</span>{" "}
-                              Special Ability Bonus = 200% (KVD Boom Boom)
-                            </div>
-                            <div>
-                              <span className='text-gray-300'>Step 7:</span>{" "}
-                              After Special ={" "}
-                              {(
-                                (parseFloat(psiIntensity) || 0) *
-                                (1 +
-                                  ((parseFloat(elementalDamage) || 0) +
-                                    deviantEnergyBonus) /
-                                    100) *
-                                (1 + (parseFloat(statusDamage) || 0) / 100)
-                              ).toFixed(3)}{" "}
-                              × 3 ={" "}
-                              {(
-                                (parseFloat(psiIntensity) || 0) *
-                                (1 +
-                                  ((parseFloat(elementalDamage) || 0) +
-                                    deviantEnergyBonus) /
-                                    100) *
-                                (1 + (parseFloat(statusDamage) || 0) / 100) *
-                                3
-                              ).toFixed(3)}
-                            </div>
-                            <div>
-                              <span className='text-gray-300'>Step 8:</span>{" "}
-                              Enemy Multiplier ={" "}
-                              {parseFloat(enemyDamageMultiplier) || 0}%
-                              {keyArmor === "shoes" &&
-                                selectedArmor.shoes === "earthly-boots" && (
-                                  <span className='text-green-400'>
-                                    {" "}
-                                    + 30% (Earthly Boots)
-                                  </span>
-                                )}
-                            </div>
-                            <div>
-                              <span className='text-gray-300'>Step 9:</span>{" "}
-                              After Enemy ={" "}
-                              {(
-                                (parseFloat(psiIntensity) || 0) *
-                                (1 +
-                                  ((parseFloat(elementalDamage) || 0) +
-                                    deviantEnergyBonus) /
-                                    100) *
-                                (1 + (parseFloat(statusDamage) || 0) / 100) *
-                                3
-                              ).toFixed(3)}{" "}
-                              × (1 +{" "}
-                              {(parseFloat(enemyDamageMultiplier) || 0) +
-                                (keyArmor === "shoes" &&
-                                selectedArmor.shoes === "earthly-boots"
-                                  ? 30
-                                  : 0)}
-                              /100) ={" "}
-                              {(
-                                (parseFloat(psiIntensity) || 0) *
-                                (1 +
-                                  ((parseFloat(elementalDamage) || 0) +
-                                    deviantEnergyBonus) /
-                                    100) *
-                                (1 + (parseFloat(statusDamage) || 0) / 100) *
-                                3 *
-                                (1 +
-                                  ((parseFloat(enemyDamageMultiplier) || 0) +
-                                    (keyArmor === "shoes" &&
-                                    selectedArmor.shoes === "earthly-boots"
-                                      ? 30
-                                      : 0)) /
-                                    100)
-                              ).toFixed(3)}
-                            </div>
-                            {(parseFloat(vulnerability) || 0) > 0 && (
-                              <>
-                                <div>
-                                  <span className='text-blue-400'>
-                                    Step 10:
-                                  </span>{" "}
-                                  Vulnerability ={" "}
-                                  {parseFloat(vulnerability) || 0}%
-                                  {usingVulnAmp && " + 8% (Vuln Amp)"}
-                                </div>
-                                <div>
-                                  <span className='text-blue-400'>
-                                    Step 11:
-                                  </span>{" "}
-                                  Final Explosion ={" "}
-                                  {(
-                                    (parseFloat(psiIntensity) || 0) *
-                                    (1 +
-                                      ((parseFloat(elementalDamage) || 0) +
-                                        deviantEnergyBonus) /
-                                        100) *
-                                    (1 +
-                                      (parseFloat(statusDamage) || 0) / 100) *
-                                    3 *
-                                    (1 +
-                                      ((parseFloat(enemyDamageMultiplier) ||
-                                        0) +
-                                        (keyArmor === "shoes" &&
-                                        selectedArmor.shoes === "earthly-boots"
-                                          ? 30
-                                          : 0)) /
-                                        100)
-                                  ).toFixed(3)}{" "}
-                                  × (1 +{" "}
-                                  {(parseFloat(vulnerability) || 0) +
-                                    (usingVulnAmp ? 8 : 0)}
-                                  /100) ={" "}
-                                  {(
-                                    (parseFloat(psiIntensity) || 0) *
-                                    (1 +
-                                      ((parseFloat(elementalDamage) || 0) +
-                                        deviantEnergyBonus) /
-                                        100) *
-                                    (1 +
-                                      (parseFloat(statusDamage) || 0) / 100) *
-                                    3 *
-                                    (1 +
-                                      ((parseFloat(enemyDamageMultiplier) ||
-                                        0) +
-                                        (keyArmor === "shoes" &&
-                                        selectedArmor.shoes === "earthly-boots"
-                                          ? 30
-                                          : 0)) /
-                                        100) *
-                                    (1 +
-                                      ((parseFloat(vulnerability) || 0) +
-                                        (usingVulnAmp ? 8 : 0)) /
-                                        100)
-                                  ).toFixed(3)}
-                                </div>
-                              </>
-                            )}
-                            <div className='text-orange-400 font-semibold mt-3'>
-                              → Final Explosion: {burnResults.explosion}
-                            </div>
-                          </div>
-                        </div>
+                        )}
                       </div>
                     </div>
                   </div>
